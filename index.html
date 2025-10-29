@@ -10,19 +10,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --background-light: #f8f9fa;
-        --background-dark: #0d1117;
+        --background-light: #fdfdff;
+        --background-dark: #0a0a0a;
         --card-light: #ffffff;
-        --card-dark: #161b22;
-        --text-light: #212529;
-        --text-dark: #e6edf3;
+        --card-dark: #111111;
+        --text-light: #0a0a0a;
+        --text-dark: #f0f0f0;
         --primary-accent: #6366f1;
         --secondary-accent: #8b5cf6;
-        --border-light: #e9ecef;
-        --border-dark: #30363d;
+        --border-light: #eaeaeb;
+        --border-dark: #27272a;
       }
       body {
         font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       .gradient-text {
         background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
@@ -33,7 +35,9 @@
       .gradient-bg {
         background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
       }
-      /* Simple scrollbar styling for a more modern look */
+      .glow-on-hover:hover {
+        box-shadow: 0 0 15px 0px color-mix(in srgb, var(--primary-accent) 40%, transparent);
+      }
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -47,6 +51,10 @@
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #6366f1;
+      }
+
+      ::selection {
+        background-color: color-mix(in srgb, var(--primary-accent) 30%, transparent);
       }
     </style>
 <script type="importmap">

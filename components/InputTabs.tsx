@@ -29,7 +29,6 @@ const CameraIcon: React.FC<{className?: string}> = ({className}) => (
     </svg>
 );
 
-// Fix: Redefined TabButton with React.FC and a dedicated props interface to resolve type inference issues.
 interface TabButtonProps {
   currentMode: InputMode;
   targetMode: InputMode;
@@ -39,10 +38,10 @@ interface TabButtonProps {
 const TabButton: React.FC<TabButtonProps> = ({ currentMode, targetMode, children, onClick }) => (
     <button
         onClick={onClick}
-        className={`w-1/3 py-3 px-4 text-center font-semibold transition-all duration-300 flex items-center justify-center rounded-md
+        className={`w-1/3 py-3 px-4 text-center font-semibold transition-all duration-300 flex items-center justify-center rounded-lg
         ${currentMode === targetMode 
-            ? 'gradient-bg text-white shadow-lg' 
-            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+            ? 'gradient-bg text-white shadow-md' 
+            : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'}`}
     >
         {children}
     </button>
@@ -101,7 +100,7 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
     return () => {
         stopCamera();
     };
-  }, [mode]);
+  }, [mode, stopCamera]);
 
 
   const processAndGenerateFromDataUrl = async (dataUrl: string) => {
@@ -190,7 +189,7 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
   return (
     <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl overflow-hidden border border-[var(--border-light)] dark:border-[var(--border-dark)] transition-colors duration-300">
       <div className="p-4 sm:p-6 bg-gray-50 dark:bg-black/20">
-        <div className="flex space-x-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+        <div className="flex space-x-2 bg-gray-100 dark:bg-black/25 p-1 rounded-xl">
           <TabButton currentMode={mode} targetMode="image" onClick={() => setMode('image')}>
               <UploadIcon /> <span className="hidden sm:inline ml-2">Imagem</span>
           </TabButton>
@@ -217,7 +216,7 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
-              className="w-full px-6 py-10 border-2 border-dashed border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-xl text-gray-500 dark:text-gray-400 hover:border-[var(--primary-accent)] dark:hover:border-[var(--primary-accent)] hover:text-[var(--primary-accent)] dark:hover:text-[var(--primary-accent)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center bg-gray-50 dark:bg-black/20 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+              className="w-full px-6 py-10 border-2 border-dashed border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-xl text-gray-500 dark:text-gray-400 hover:border-[var(--primary-accent)] dark:hover:border-[var(--primary-accent)] hover:text-[var(--primary-accent)] dark:hover:text-[var(--primary-accent)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center bg-gray-50/50 dark:bg-black/20 hover:bg-indigo-50 dark:hover:bg-indigo-900/10"
             >
               <UploadIcon className="h-10 w-10 mb-2"/>
               <span className="font-semibold">Clique para importar uma imagem</span>
@@ -228,7 +227,7 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
 
         {mode === 'camera' && (
             <div className="flex flex-col items-center">
-                <div className="w-full max-w-lg bg-black rounded-lg overflow-hidden mb-4 border-2 border-[var(--border-dark)] shadow-lg">
+                <div className="w-full max-w-lg bg-black rounded-lg overflow-hidden mb-4 border border-[var(--border-dark)] shadow-lg">
                     <video ref={videoRef} autoPlay playsInline className="w-full h-auto aspect-video object-cover" />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
@@ -251,13 +250,13 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
                 value={productUrl}
                 onChange={(e) => setProductUrl(e.target.value)}
                 placeholder="https://exemplo.com/produto"
-                className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-900/50 border-2 border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300"
+                className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300"
                 disabled={isLoading}
               />
             </div>
             <button
               type="submit"
-              className="px-6 py-3 gradient-bg text-white font-bold rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-accent)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105"
+              className="px-6 py-3 gradient-bg text-white font-bold rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-accent)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105 glow-on-hover"
               disabled={isLoading}
             >
               {isLoading ? 'Gerando...' : 'Gerar Conteúdo'}
