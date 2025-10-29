@@ -1,3 +1,4 @@
+
 export type InputMode = 'image' | 'url' | 'camera';
 
 export type ImageType = 
@@ -72,4 +73,16 @@ export type GeneratedContent = {
   chatbotScripts: string[];
   
   groundingChunks?: any[];
+};
+
+export type EventType = "Venda Aprovada" | "Pix Gerado" | "Pedido Enviado" | "Venda Cancelada" | "Pix Expirado";
+
+export type NotificationData = {
+    eventType: EventType;
+    value: string;
+    product: string;
+    time: string;
+    client: string;
+    paymentMethod: string; // The text to display, e.g., "Cartão de Crédito"
+    paymentLogoSvg: string; // The raw SVG string for the logo image
 };

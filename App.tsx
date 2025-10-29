@@ -5,6 +5,7 @@ import type { GeneratedContent } from './types';
 import ProductMediaGenerator from './components/ProductMediaGenerator';
 import BrandIdentityGenerator from './components/BrandIdentityGenerator';
 import CompletionModal from './components/CompletionModal';
+import NotificationGenerator from './components/NotificationGenerator';
 
 const initialContentState: GeneratedContent = {
   // Conteúdo Essencial
@@ -288,6 +289,16 @@ const App: React.FC = () => {
                  </p>
                  <BrandIdentityGenerator />
               </section>
+
+              {/* Engagement Tools */}
+              <section>
+                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Ferramentas de Engajamento</h2>
+                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">
+                    Gere notificações de vendas para usar em vídeos e stories.
+                 </p>
+                 <NotificationGenerator />
+              </section>
+
 
               <div className="relative my-12">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import type { GeneratedContent } from '../types';
+import type { GeneratedContent, NotificationData } from '../types';
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable not set.");
@@ -310,4 +310,63 @@ export const generateBanners = async (
     }
 
     return banners;
+};
+
+export const generateNotificationImages = async (data: NotificationData): Promise<(string | null)[]> => {
+    const { eventType, value, product, time, client, paymentMethod, paymentLogoSvg } = data;
+    
+    const paymentLogoBase64 = btoa(paymentLogoSvg);
+    const logoImagePart = { inlineData: { data: paymentLogoBase64, mimeType: 'image/svg+xml' } };
+
+    const styles = [
+      { name: "Dark Mode", prompt: "Create a photorealistic image of a smartphone notification. Style: modern dark mode, sleek, minimalist, on a black background." },
+      { name: "Light Mode", prompt: "Create a photorealistic image of a smartphone notification. Style: clean light mode, vibrant green accent color, on a white background." },
+      { name: "Glassmorphism", prompt: "Create a photorealistic image of a smartphone notification. Style: glassmorphism, with a blurred background and translucent effect." },
+      { name: "Neumorphic", prompt: "Create a photorealistic image of a smartphone notification. Style: neumorphic, with soft shadows and a subtle, clean UI." },
+      { name: "Playful", prompt: "Create a photorealistic image of a smartphone notification. Style: playful and friendly, with bold typography and rounded corners." },
+    ];
+
+    const promises = styles.map(style => {
+        const textPrompt = `
+        ${style.prompt}
+        The notification must look like a real OS notification (e.g., iOS or Android).
+        It must have a square green app icon on the left with a white lime slice logo inside it.
+        The notification content must be clearly legible and contain this exact information:
+        - Event: '${eventType}!' (in bold)
+        - Value: 'Valor: R$ ${value}'
+        - Product: 'Produto: ${product}'
+        - Client: 'Cliente: ${client}'
+        - Payment: '${paymentMethod}'
+        - The timestamp on the right should say '${time}'.
+        The provided payment method logo must be displayed next to the payment text or client name.
+        Use a clean, modern, sans-serif font.
+        `;
+
+        const textPart = { text: textPrompt };
+        
+        return ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [textPart, logoImagePart] },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        }).then(response => {
+            const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
+            if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
+                return generatedPart.inlineData.data;
+            }
+            return null;
+        }).catch(error => {
+            console.error(`Error generating notification style ${style.name}:`, error);
+            return null;
+        });
+    });
+
+    const results = await Promise.all(promises);
+
+    if (results.every(r => r === null)) {
+        throw new Error("A IA não conseguiu gerar nenhuma imagem de notificação. Tente novamente.");
+    }
+
+    return results;
 };
