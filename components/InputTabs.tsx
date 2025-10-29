@@ -29,8 +29,14 @@ const CameraIcon: React.FC<{className?: string}> = ({className}) => (
     </svg>
 );
 
-// Fix: Moved TabButton component outside of InputTabs to prevent re-declaration on each render and fix type inference issues.
-const TabButton = ({ currentMode, targetMode, children, onClick }: { currentMode: InputMode, targetMode: InputMode, children: React.ReactNode, onClick: () => void }) => (
+// Fix: Redefined TabButton with React.FC and a dedicated props interface to resolve type inference issues.
+interface TabButtonProps {
+  currentMode: InputMode;
+  targetMode: InputMode;
+  children: React.ReactNode;
+  onClick: () => void;
+}
+const TabButton: React.FC<TabButtonProps> = ({ currentMode, targetMode, children, onClick }) => (
     <button
         onClick={onClick}
         className={`w-1/3 py-3 px-4 text-center font-semibold transition-all duration-300 flex items-center justify-center rounded-md

@@ -236,3 +236,65 @@ export const generateVisualContent = async (base64SourceImage: string, mimeType:
         throw new Error("Falha ao gerar a imagem. A IA pode ter recusado a solicitação.");
     }
 };
+
+export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
+    try {
+        const textPart = { text: prompt };
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [textPart] },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+        
+        const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
+        if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
+            return generatedPart.inlineData.data;
+        }
+
+        throw new Error("A API não retornou uma imagem de logo válida.");
+    } catch (error) {
+        console.error("Error generating logo:", error);
+        throw new Error("Falha ao gerar o logo. A IA pode ter recusado a solicitação.");
+    }
+};
+
+export const generateBrandingAssets = async (
+    prompt: string, 
+    referenceImage: { base64: string; mimeType: string } | null
+): Promise<{ logos: (string | null)[], shopeeBanners: (string | null)[], facebookBanners: (string | null)[] }> => {
+    
+    // Logo generation
+    const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, for: ${prompt}`;
+    const logoPromises = Array(4).fill(null).map(() => generateImageFromPrompt(logoPromptText));
+
+    // Banner generation
+    let shopeePromises: Promise<string>[] = [];
+    let facebookPromises: Promise<string>[] = [];
+
+    if (referenceImage) {
+        const shopeePrompt = `Using the product from the provided image, create a professional and visually appealing banner for a Shopee store. Aspect ratio must be exactly 2:1. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
+        const facebookPrompt = `Using the product from the provided image, create a professional Facebook cover photo. Aspect ratio must be exactly 851:315. The product should be on one side, leaving space for profile pictures and text. The style should be on-brand for: ${prompt}`;
+        
+        shopeePromises = Array(2).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, shopeePrompt));
+        facebookPromises = Array(2).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, facebookPrompt));
+    }
+
+    const [logoResults, shopeeResults, facebookResults] = await Promise.all([
+        Promise.allSettled(logoPromises),
+        Promise.allSettled(shopeePromises),
+        Promise.allSettled(facebookPromises)
+    ]);
+
+    const logos = logoResults.map(res => res.status === 'fulfilled' ? res.value : null);
+    const shopeeBanners = shopeeResults.map(res => res.status === 'fulfilled' ? res.value : null);
+    const facebookBanners = facebookResults.map(res => res.status === 'fulfilled' ? res.value : null);
+    
+    if (logos.every(l => l === null) && shopeeBanners.every(b => b === null) && facebookBanners.every(b => b === null)) {
+         throw new Error("A IA não conseguiu gerar nenhum material de branding. Tente um prompt mais descritivo ou uma imagem de referência diferente.");
+    }
+
+    return { logos, shopeeBanners, facebookBanners };
+};
