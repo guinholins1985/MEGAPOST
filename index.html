@@ -5,20 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MEGAPOST - Gerador de Conteúdo AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --background-light: #f8f9fa;
+        --background-dark: #0d1117;
+        --card-light: #ffffff;
+        --card-dark: #161b22;
+        --text-light: #212529;
+        --text-dark: #e6edf3;
+        --primary-accent: #6366f1;
+        --secondary-accent: #8b5cf6;
+        --border-light: #e9ecef;
+        --border-dark: #30363d;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      .gradient-text {
+        background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .gradient-bg {
+        background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
+      }
       /* Simple scrollbar styling for a more modern look */
       ::-webkit-scrollbar {
         width: 8px;
+        height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #888;
+        background: #4a4a61;
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #555;
+        background: #6366f1;
       }
     </style>
 <script type="importmap">
@@ -32,7 +60,7 @@
 }
 </script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
+<body class="bg-[var(--background-light)] dark:bg-[var(--background-dark)]">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

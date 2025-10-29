@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import type { GeneratedContent } from '../types';
 
 if (!process.env.API_KEY) {
@@ -207,5 +207,32 @@ export const generateContentFromUrl = async (productUrl: string): Promise<Genera
     } catch (error) {
         console.error("Error generating content from URL:", error);
         throw new Error("Falha ao gerar conteúdo a partir do link. Verifique a URL e tente novamente.");
+    }
+};
+
+export const generateVisualContent = async (base64SourceImage: string, mimeType: string, prompt: string): Promise<string> => {
+    try {
+        const imagePart = {
+            inlineData: { data: base64SourceImage, mimeType },
+        };
+        const textPart = { text: prompt };
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+        
+        const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
+        if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
+            return generatedPart.inlineData.data;
+        }
+
+        throw new Error("A API não retornou uma imagem válida.");
+    } catch (error) {
+        console.error("Error generating visual content:", error);
+        throw new Error("Falha ao gerar a imagem. A IA pode ter recusado a solicitação.");
     }
 };

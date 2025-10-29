@@ -1,4 +1,41 @@
-export type InputMode = 'image' | 'url';
+export type InputMode = 'image' | 'url' | 'camera';
+
+export type ImageType = 
+  // Imagens de Produto Profissionais
+  | 'white_background' 
+  | 'instagram_post_promo'
+  | 'facebook_post_ad'
+  | 'instagram_story_promo'
+
+  // Mockups Realistas
+  | 'mockup_with_model_lifestyle'
+  | 'mockup_with_model_professional'
+  | 'mockup_product_focused'
+  | 'mockup_close_up'
+
+  // Banners e Templates para Redes Sociais
+  | 'banner_promo_coupon'
+  | 'banner_seasonal_bf'
+  | 'banner_facebook_cover'
+  | 'template_instagram_post'
+  | 'template_instagram_story'
+  | 'vertical_tiktok_reels'
+  | 'vertical_whatsapp_status'
+
+  // Efeitos e Mídias Dinâmicas
+  | 'effect_3d_shadow'
+  | 'effect_floating'
+
+  // Conteúdos Educativos e Complementares
+  | 'infographic_benefits'
+  | 'youtube_thumbnail';
+
+
+export type GeneratedImage = {
+  base64: string | null;
+  isLoading: boolean;
+  error: string | null;
+};
 
 export type GeneratedContent = {
   // Conteúdo Essencial
