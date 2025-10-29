@@ -261,11 +261,21 @@ export const generateImageFromPrompt = async (prompt: string): Promise<string> =
     }
 };
 
-export const generateLogos = async (prompt: string): Promise<(string | null)[]> => {
-    const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
+export const generateLogos = async (
+    prompt: string,
+    referenceImage: { base64: string; mimeType: string } | null
+): Promise<(string | null)[]> => {
     
-    const promises = Array(10).fill(null).map(() => generateImageFromPrompt(logoPromptText));
-    
+    let promises: Promise<string>[];
+
+    if (referenceImage) {
+        const logoPromptText = `Using the provided image as inspiration for style and concept, create a minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
+        promises = Array(10).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, logoPromptText));
+    } else {
+        const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
+        promises = Array(10).fill(null).map(() => generateImageFromPrompt(logoPromptText));
+    }
+
     const results = await Promise.allSettled(promises);
     
     const logos = results.map(res => res.status === 'fulfilled' ? res.value : null);
