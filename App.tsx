@@ -44,17 +44,17 @@ const initialContentState: GeneratedContent = {
 };
 
 const Logo: React.FC<{className?: string}> = ({ className }) => (
-    <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{stopColor: 'var(--primary-accent)', stopOpacity: 1}} />
-                <stop offset="100%" style={{stopColor: 'var(--secondary-accent)', stopOpacity: 1}} />
+            <linearGradient id="logoGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="var(--primary-accent)" />
+                <stop offset="100%" stopColor="var(--secondary-accent)" />
             </linearGradient>
         </defs>
-        <path fill="url(#logoGradient)" d="M50,0 A50,50 0 0,1 100,50 L90,50 A40,40 0 0,0 50,10 Z" />
-        <path fill="url(#logoGradient)" d="M50,100 A50,50 0 0,1 0,50 L10,50 A40,40 0 0,0 50,90 Z" />
-        <path fill="url(#logoGradient)" d="M5,25 L25,5 L35,15 L15,35 Z" />
-        <path fill="url(#logoGradient)" d="M95,75 L75,95 L65,85 L85,65 Z" />
+        <path
+            fill="url(#logoGradient)"
+            d="M2 21V3h3.33L12 12l6.67-9H22v18h-3.33V7.69L12 16.69 5.33 7.69V21H2Z"
+        />
     </svg>
 );
 
@@ -186,10 +186,10 @@ const App: React.FC = () => {
                 <div className="flex justify-center mb-6">
                   <Logo className="h-24 w-24" />
                 </div>
-                <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tighter mb-4">
+                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold leading-tight tracking-tighter mb-4">
                     <span className="gradient-text">MEGAPOST</span>
                 </h1>
-                <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tighter">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tighter">
                     Sua Agência de Marketing em um Clique.
                 </h2>
                 <p className="mt-6 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
@@ -271,7 +271,7 @@ const App: React.FC = () => {
             <header className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                     <Logo className="h-10 w-10"/>
-                    <h1 className="text-2xl font-bold gradient-text">MEGAPOST Workspace</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text">MEGAPOST Workspace</h1>
                 </div>
               <button onClick={resetToHome} className="px-4 py-2 text-sm font-semibold bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 Voltar ao Início
