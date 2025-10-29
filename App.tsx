@@ -97,7 +97,7 @@ const App: React.FC = () => {
   const handleGeneration = (content: GeneratedContent) => {
     setGeneratedContent(content);
     if(content.titles.length > 0) {
-      setBrandingPrompt(`Um logo para: ${content.titles[0]}`);
+      setBrandingPrompt(`Uma marca para: ${content.titles[0]}`);
     } else {
       setBrandingPrompt('');
     }
@@ -194,20 +194,22 @@ const App: React.FC = () => {
             </div>
         </section>
 
-        <div id="generator" className="max-w-4xl mx-auto mt-24 scroll-mt-24">
+        <div id="generator" className="max-w-7xl mx-auto mt-24 scroll-mt-24">
            <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Passo 1: Gere o Conteúdo de Marketing</h2>
-           <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8">Forneça seu produto e deixe a IA fazer o trabalho pesado.</p>
-          <InputTabs 
-            setIsLoading={setIsLoading} 
-            onGeneration={handleGeneration}
-            onError={handleError}
-            isLoading={isLoading}
-            onSourceImageReady={handleSourceImage}
-          />
+           <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">Forneça seu produto e deixe a IA fazer o trabalho pesado.</p>
+          <div className="max-w-4xl mx-auto">
+            <InputTabs 
+              setIsLoading={setIsLoading} 
+              onGeneration={handleGeneration}
+              onError={handleError}
+              isLoading={isLoading}
+              onSourceImageReady={handleSourceImage}
+            />
+          </div>
           {hasContent && !isLoading && !error && (
             <BrandingGenerator
-              prompt={brandingPrompt}
-              setPrompt={setBrandingPrompt}
+              initialPrompt={brandingPrompt}
+              sourceImage={sourceImage}
             />
           )}
           <ResultDisplay 

@@ -261,40 +261,43 @@ export const generateImageFromPrompt = async (prompt: string): Promise<string> =
     }
 };
 
-export const generateBrandingAssets = async (
+export const generateLogos = async (prompt: string): Promise<(string | null)[]> => {
+    const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
+    
+    const promises = Array(10).fill(null).map(() => generateImageFromPrompt(logoPromptText));
+    
+    const results = await Promise.allSettled(promises);
+    
+    const logos = results.map(res => res.status === 'fulfilled' ? res.value : null);
+
+    if (logos.every(l => l === null)) {
+         throw new Error("A IA não conseguiu gerar nenhum logo. Tente um prompt mais descritivo.");
+    }
+    return logos;
+};
+
+export const generateBanners = async (
     prompt: string, 
     referenceImage: { base64: string; mimeType: string } | null
-): Promise<{ logos: (string | null)[], shopeeBanners: (string | null)[], facebookBanners: (string | null)[] }> => {
+): Promise<(string | null)[]> => {
     
-    // Logo generation
-    const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, for: ${prompt}`;
-    const logoPromises = Array(4).fill(null).map(() => generateImageFromPrompt(logoPromptText));
-
-    // Banner generation
-    let shopeePromises: Promise<string>[] = [];
-    let facebookPromises: Promise<string>[] = [];
+    let promises: Promise<string>[];
 
     if (referenceImage) {
-        const shopeePrompt = `Using the product from the provided image, create a professional and visually appealing banner for a Shopee store. Aspect ratio must be exactly 2:1. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
-        const facebookPrompt = `Using the product from the provided image, create a professional Facebook cover photo. Aspect ratio must be exactly 851:315. The product should be on one side, leaving space for profile pictures and text. The style should be on-brand for: ${prompt}`;
-        
-        shopeePromises = Array(2).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, shopeePrompt));
-        facebookPromises = Array(2).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, facebookPrompt));
+        const bannerPrompt = `Using the product from the provided image, create a professional and visually appealing marketing banner. Aspect ratio must be exactly 16:9. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
+        promises = Array(10).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, bannerPrompt));
+    } else {
+        const bannerPrompt = `Create a professional and visually appealing marketing banner. Aspect ratio must be exactly 16:9. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
+        promises = Array(10).fill(null).map(() => generateImageFromPrompt(bannerPrompt));
     }
 
-    const [logoResults, shopeeResults, facebookResults] = await Promise.all([
-        Promise.allSettled(logoPromises),
-        Promise.allSettled(shopeePromises),
-        Promise.allSettled(facebookPromises)
-    ]);
-
-    const logos = logoResults.map(res => res.status === 'fulfilled' ? res.value : null);
-    const shopeeBanners = shopeeResults.map(res => res.status === 'fulfilled' ? res.value : null);
-    const facebookBanners = facebookResults.map(res => res.status === 'fulfilled' ? res.value : null);
+    const results = await Promise.allSettled(promises);
     
-    if (logos.every(l => l === null) && shopeeBanners.every(b => b === null) && facebookBanners.every(b => b === null)) {
-         throw new Error("A IA não conseguiu gerar nenhum material de branding. Tente um prompt mais descritivo ou uma imagem de referência diferente.");
+    const banners = results.map(res => res.status === 'fulfilled' ? res.value : null);
+    
+    if (banners.every(b => b === null)) {
+         throw new Error("A IA não conseguiu gerar nenhum banner. Tente um prompt mais descritivo ou uma imagem de referência diferente.");
     }
 
-    return { logos, shopeeBanners, facebookBanners };
+    return banners;
 };
