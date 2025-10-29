@@ -1,34 +1,36 @@
 export type InputMode = 'image' | 'url';
 
 export type GeneratedContent = {
-  // SEO & Product Essentials
+  // Conteúdo Essencial
   titles: string[];
   descriptions: string[];
+  productPricing: string[];
   tags: string[];
+  hashtags: string[];
+
+  // Redes Sociais e Engajamento
+  socialMediaPosts: string[];
+  shortVideoScripts: string[];
+  fictionalTestimonials: string[];
+  
+  // SEO Avançado e Marketing de Conteúdo
   longTailKeywords: string[];
   metaTagsAndAltTexts: string[];
-  
-  // Social Media & Engagement
-  hashtags: string[];
-  socialMediaPosts: string[];
-  fictionalTestimonials: string[];
-  shortVideoScripts: string[];
-  
-  // Marketing & Sales Campaigns
-  promotionalPhrases: string[];
-  marketingEmails: string[];
   blogArticles: string[];
   buyingGuides: string[];
-  productPricing: string[];
-
-  // Dynamic & Interactive Content
   faqs: string[];
+
+  // Campanhas de Vendas e Promoções
+  promotionalPhrases: string[];
+  marketingEmails: string[];
   priceVariations: string[];
-  competitorComparisons: string[];
-  countdownPromos: string[];
   discountCoupons: string[];
-  landingPageCopies: string[];
+  countdownPromos: string[];
   popupCopies: string[];
+
+  // Ferramentas Avançadas e Interativas
+  landingPageCopies: string[];
+  competitorComparisons: string[];
   interactiveQuizzes: string[];
   chatbotScripts: string[];
   

@@ -4,29 +4,39 @@ import ResultDisplay from './components/ResultDisplay';
 import type { GeneratedContent } from './types';
 
 const initialContentState: GeneratedContent = {
+  // Conteúdo Essencial
   titles: [],
   descriptions: [],
+  productPricing: [],
   tags: [],
   hashtags: [],
-  promotionalPhrases: [],
+
+  // Redes Sociais e Engajamento
   socialMediaPosts: [],
-  metaTagsAndAltTexts: [],
-  faqs: [],
-  longTailKeywords: [],
-  fictionalTestimonials: [],
   shortVideoScripts: [],
-  marketingEmails: [],
+  fictionalTestimonials: [],
+  
+  // SEO Avançado e Marketing de Conteúdo
+  longTailKeywords: [],
+  metaTagsAndAltTexts: [],
   blogArticles: [],
   buyingGuides: [],
+  faqs: [],
+
+  // Campanhas de Vendas e Promoções
+  promotionalPhrases: [],
+  marketingEmails: [],
   priceVariations: [],
-  competitorComparisons: [],
-  countdownPromos: [],
   discountCoupons: [],
-  landingPageCopies: [],
+  countdownPromos: [],
   popupCopies: [],
+
+  // Ferramentas Avançadas e Interativas
+  landingPageCopies: [],
+  competitorComparisons: [],
   interactiveQuizzes: [],
   chatbotScripts: [],
-  productPricing: [],
+  
   groundingChunks: [],
 };
 
@@ -50,10 +60,10 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8 md:py-12">
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
-            Otimizador de Conteúdo AI
+            MEGAPOST
           </h1>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Sua suíte completa de IA para marketing de produtos. Gere tudo, desde SEO e posts sociais até scripts de vídeo e e-mails.
+            Sua suíte completa de IA para marketing de produtos. Gere todo o conteúdo para seu post com um único clique.
           </p>
         </header>
 

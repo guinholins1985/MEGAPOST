@@ -43,11 +43,12 @@ const InputTabs: React.FC<InputTabsProps> = ({ setIsLoading, onGeneration, onErr
   
   const resetState = () => {
     onGeneration({ 
-      titles: [], descriptions: [], tags: [], hashtags: [], promotionalPhrases: [], socialMediaPosts: [],
-      metaTagsAndAltTexts: [], faqs: [], longTailKeywords: [], fictionalTestimonials: [], shortVideoScripts: [],
-      marketingEmails: [], blogArticles: [], buyingGuides: [], priceVariations: [], competitorComparisons: [],
-      countdownPromos: [], discountCoupons: [], landingPageCopies: [], popupCopies: [], interactiveQuizzes: [],
-      chatbotScripts: [], productPricing: [], groundingChunks: [] 
+      titles: [], descriptions: [], productPricing: [], tags: [], hashtags: [],
+      socialMediaPosts: [], shortVideoScripts: [], fictionalTestimonials: [],
+      longTailKeywords: [], metaTagsAndAltTexts: [], blogArticles: [], buyingGuides: [], faqs: [],
+      promotionalPhrases: [], marketingEmails: [], priceVariations: [], discountCoupons: [], countdownPromos: [], popupCopies: [],
+      landingPageCopies: [], competitorComparisons: [], interactiveQuizzes: [], chatbotScripts: [],
+      groundingChunks: [] 
     });
     onError('');
   };

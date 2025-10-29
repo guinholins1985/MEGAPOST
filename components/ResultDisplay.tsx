@@ -86,7 +86,7 @@ const AccordionSection: React.FC<{ title: string; children: React.ReactNode; cou
     if (count === 0) return null;
 
     return (
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
             <h2>
                 <button type="button" onClick={() => setIsOpen(!isOpen)} className="flex items-center justify-between w-full p-5 font-medium text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-expanded={isOpen}>
                     <div className="flex items-center"><span className="text-lg">{title}</span><span className="ml-3 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">{count}</span></div>
@@ -127,43 +127,53 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ isLoading, content, error
         );
     }
 
-    const { titles, descriptions, tags, longTailKeywords, metaTagsAndAltTexts, hashtags, socialMediaPosts, fictionalTestimonials, shortVideoScripts, promotionalPhrases, marketingEmails, blogArticles, buyingGuides, faqs, priceVariations, competitorComparisons, countdownPromos, discountCoupons, landingPageCopies, popupCopies, interactiveQuizzes, chatbotScripts, productPricing, groundingChunks } = content;
+    const { 
+        titles, descriptions, productPricing, tags, hashtags,
+        socialMediaPosts, shortVideoScripts, fictionalTestimonials,
+        longTailKeywords, metaTagsAndAltTexts, blogArticles, buyingGuides, faqs,
+        promotionalPhrases, marketingEmails, priceVariations, discountCoupons, countdownPromos, popupCopies,
+        landingPageCopies, competitorComparisons, interactiveQuizzes, chatbotScripts,
+        groundingChunks 
+    } = content;
 
     return (
         <div className="mt-8 bg-gray-50 dark:bg-gray-800/50 shadow-lg rounded-lg overflow-hidden border dark:border-gray-700">
-            <AccordionSection title="Essenciais de SEO e Produto" defaultOpen count={titles.length + descriptions.length + tags.length + longTailKeywords.length + metaTagsAndAltTexts.length}>
+            <AccordionSection title="Conteúdo Essencial do Produto" defaultOpen count={titles.length + descriptions.length + productPricing.length + tags.length + hashtags.length}>
                 {titles.length > 0 && <ListSection title="Títulos Sugeridos" items={titles} sectionId="title" onCopy={handleCopy} copiedId={copiedId} hideTitle />}
                 {descriptions.length > 0 && <ComplexContentSection title="Descrições Sugeridas" items={descriptions} sectionId="desc" onCopy={handleCopy} copiedId={copiedId} />}
+                {productPricing.length > 0 && <ListSection title="Preço Sugerido (Shopee)" items={productPricing} sectionId="pricing" onCopy={handleCopy} copiedId={copiedId} />}
                 {tags.length > 0 && <PillSection title="Tags SEO Sugeridas" items={tags} sectionId="tag" onCopy={handleCopy} copiedId={copiedId} copyLabel="Tags" />}
+                {hashtags.length > 0 && <PillSection title="Hashtags Sugeridas" items={hashtags} sectionId="hashtag" onCopy={handleCopy} copiedId={copiedId} copyLabel="Hashtags" />}
+            </AccordionSection>
+
+            <AccordionSection title="Redes Sociais e Engajamento" count={socialMediaPosts.length + shortVideoScripts.length + fictionalTestimonials.length}>
+                {socialMediaPosts.length > 0 && <ListSection title="Posts para Redes Sociais" items={socialMediaPosts} sectionId="social" onCopy={handleCopy} copiedId={copiedId} />}
+                {shortVideoScripts.length > 0 && <ComplexContentSection title="Scripts para Vídeos Curtos" items={shortVideoScripts} sectionId="script" onCopy={handleCopy} copiedId={copiedId} />}
+                {fictionalTestimonials.length > 0 && <ComplexContentSection title="Depoimentos Fictícios" items={fictionalTestimonials} sectionId="testimonial" onCopy={handleCopy} copiedId={copiedId} />}
+            </AccordionSection>
+
+            <AccordionSection title="SEO Avançado e Marketing de Conteúdo" count={longTailKeywords.length + metaTagsAndAltTexts.length + blogArticles.length + buyingGuides.length + faqs.length}>
                 {longTailKeywords.length > 0 && <PillSection title="Keywords Long-Tail" items={longTailKeywords} sectionId="longtail" onCopy={handleCopy} copiedId={copiedId} copyLabel="Keywords" />}
                 {metaTagsAndAltTexts.length > 0 && <ListSection title="Meta Tags e Alt Text" items={metaTagsAndAltTexts} sectionId="meta" onCopy={handleCopy} copiedId={copiedId} />}
+                {blogArticles.length > 0 && <ListSection title="Ideias para Blog" items={blogArticles} sectionId="blog" onCopy={handleCopy} copiedId={copiedId} />}
+                {buyingGuides.length > 0 && <ListSection title="Guias de Compra" items={buyingGuides} sectionId="guide" onCopy={handleCopy} copiedId={copiedId} />}
+                {faqs.length > 0 && <ComplexContentSection title="Perguntas Frequentes (FAQ)" items={faqs} sectionId="faq" onCopy={handleCopy} copiedId={copiedId} />}
             </AccordionSection>
 
-            <AccordionSection title="Conteúdo para Redes Sociais e Engajamento" count={hashtags.length + socialMediaPosts.length + fictionalTestimonials.length + shortVideoScripts.length}>
-                {hashtags.length > 0 && <PillSection title="Hashtags Sugeridas" items={hashtags} sectionId="hashtag" onCopy={handleCopy} copiedId={copiedId} copyLabel="Hashtags" />}
-                {socialMediaPosts.length > 0 && <ListSection title="Frases para Redes Sociais" items={socialMediaPosts} sectionId="social" onCopy={handleCopy} copiedId={copiedId} />}
-                {fictionalTestimonials.length > 0 && <ComplexContentSection title="Depoimentos Fictícios" items={fictionalTestimonials} sectionId="testimonial" onCopy={handleCopy} copiedId={copiedId} />}
-                {shortVideoScripts.length > 0 && <ComplexContentSection title="Scripts para Vídeos Curtos" items={shortVideoScripts} sectionId="script" onCopy={handleCopy} copiedId={copiedId} />}
-            </AccordionSection>
-
-            <AccordionSection title="Campanhas de Marketing e Vendas" count={promotionalPhrases.length + marketingEmails.length + blogArticles.length + buyingGuides.length + productPricing.length}>
-                {productPricing.length > 0 && <ListSection title="Preço Sugerido (Shopee)" items={productPricing} sectionId="pricing" onCopy={handleCopy} copiedId={copiedId} />}
+            <AccordionSection title="Campanhas de Vendas e Promoções" count={promotionalPhrases.length + marketingEmails.length + priceVariations.length + discountCoupons.length + countdownPromos.length + popupCopies.length}>
                 {promotionalPhrases.length > 0 && <ListSection title="Frases Promocionais" items={promotionalPhrases} sectionId="promo" onCopy={handleCopy} copiedId={copiedId} />}
                 {marketingEmails.length > 0 && <ComplexContentSection title="E-mails Marketing" items={marketingEmails} sectionId="email" onCopy={handleCopy} copiedId={copiedId} />}
-                {blogArticles.length > 0 && <ListSection title="Artigos para Blog" items={blogArticles} sectionId="blog" onCopy={handleCopy} copiedId={copiedId} />}
-                {buyingGuides.length > 0 && <ListSection title="Guias de Compra" items={buyingGuides} sectionId="guide" onCopy={handleCopy} copiedId={copiedId} />}
+                {priceVariations.length > 0 && <ListSection title="Variações de Preço" items={priceVariations} sectionId="price" onCopy={handleCopy} copiedId={copiedId} />}
+                {discountCoupons.length > 0 && <ListSection title="Cupons de Desconto" items={discountCoupons} sectionId="coupon" onCopy={handleCopy} copiedId={copiedId} />}
+                {countdownPromos.length > 0 && <ListSection title="Textos para Contagem Regressiva" items={countdownPromos} sectionId="countdown" onCopy={handleCopy} copiedId={copiedId} />}
+                {popupCopies.length > 0 && <ListSection title="Textos para Pop-ups" items={popupCopies} sectionId="popup" onCopy={handleCopy} copiedId={copiedId} />}
             </AccordionSection>
 
-            <AccordionSection title="Conteúdo Dinâmico e Interativo" count={faqs.length + priceVariations.length + competitorComparisons.length + countdownPromos.length + discountCoupons.length + landingPageCopies.length + popupCopies.length + interactiveQuizzes.length + chatbotScripts.length}>
-                {faqs.length > 0 && <ComplexContentSection title="Perguntas Frequentes (FAQ)" items={faqs} sectionId="faq" onCopy={handleCopy} copiedId={copiedId} />}
+            <AccordionSection title="Ferramentas Avançadas e Interativas" count={landingPageCopies.length + competitorComparisons.length + interactiveQuizzes.length + chatbotScripts.length}>
                 {landingPageCopies.length > 0 && <ComplexContentSection title="Textos para Landpages" items={landingPageCopies} sectionId="lp" onCopy={handleCopy} copiedId={copiedId} />}
-                {chatbotScripts.length > 0 && <ComplexContentSection title="Scripts para Chatbot" items={chatbotScripts} sectionId="chatbot" onCopy={handleCopy} copiedId={copiedId} />}
-                {priceVariations.length > 0 && <ListSection title="Variações de Preço" items={priceVariations} sectionId="price" onCopy={handleCopy} copiedId={copiedId} />}
                 {competitorComparisons.length > 0 && <ListSection title="Comparativos com Concorrentes" items={competitorComparisons} sectionId="compare" onCopy={handleCopy} copiedId={copiedId} />}
-                {countdownPromos.length > 0 && <ListSection title="Contagens Regressivas" items={countdownPromos} sectionId="countdown" onCopy={handleCopy} copiedId={copiedId} />}
-                {discountCoupons.length > 0 && <ListSection title="Cupons de Desconto" items={discountCoupons} sectionId="coupon" onCopy={handleCopy} copiedId={copiedId} />}
-                {popupCopies.length > 0 && <ListSection title="Textos para Pop-ups" items={popupCopies} sectionId="popup" onCopy={handleCopy} copiedId={copiedId} />}
                 {interactiveQuizzes.length > 0 && <ComplexContentSection title="Quizzes Interativos" items={interactiveQuizzes} sectionId="quiz" onCopy={handleCopy} copiedId={copiedId} />}
+                {chatbotScripts.length > 0 && <ComplexContentSection title="Scripts para Chatbot" items={chatbotScripts} sectionId="chatbot" onCopy={handleCopy} copiedId={copiedId} />}
             </AccordionSection>
 
             {groundingChunks && groundingChunks.length > 0 && (
