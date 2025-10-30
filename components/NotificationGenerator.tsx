@@ -1,166 +1,337 @@
-import React, { useState } from 'react';
-import { generateNotificationImages } from '../services/geminiService';
-import type { NotificationData } from '../types';
+// Fix: Create the NotificationGenerator.tsx component file which was missing.
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import type { EventType, StatusBarData, NotificationData } from '../types';
+import AiAssetGeneratorModal from './AiAssetGeneratorModal';
+import { generateSingleNotificationImage } from '../services/geminiService';
 
-// --- Payment Logo SVG Components ---
-const PixLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 2.502c-4.14 0-7.303 1.93-8.868 4.766l.115.068c.382.227.81.332 1.25.332 1.298 0 2.22-1.21 3.53-1.21.93 0 1.543.536 1.543 1.233 0 .977-1.48 1.48-2.52 1.834-1.78.6-3.456 1.43-3.456 3.6 0 1.953 1.553 2.87 2.915 2.87 1.03 0 1.85-.36 2.45-.85l.135.08c1.55 1.02 3.34 1.58 5.14 1.58 4.14 0 7.303-1.93 8.868-4.766l-.115-.068c-.382-.227-.81-.332-1.25-.332-1.298 0-2.22 1.21-3.53 1.21-.93 0-1.543-.536-1.543-1.233 0-.977 1.48-1.48 2.52-1.834 1.78-.6 3.456-1.43 3.456-3.6 0-1.953-1.553-2.87-2.915-2.87-1.03 0-1.85.36-2.45.85l-.135-.08c-1.55-1.02-3.34-1.58-5.14-1.58Z" fill="#32BCAD"/></svg>);
-const VisaLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1A1F71" d="M14.2.6H9.8L6.2 16.1l4.4.9L12.5 3l1.7 13.9 4.2-.9L14.2.6z"/><path fill="#F7A600" d="M23.1 16.1l-1.1-6.1c0-.2-.2-.4-.4-.4H17l-1.3 7.8c-.1.4.3.8.7.8.2 0 .4-.1.5-.3l1.8-6.1h3l-2.2 7.5c-.1.4.3.8.7.8h.6c.4 0 .7-.3.8-.7l.9-2.9.2-.5z"/><path fill="#1A1F71" d="M6.2 16.1L4 4.5c-.1-.4-.5-.6-.9-.5l-3 .6C0 4.7 0 4.9 0 5.1l2.8 11.7c.1.4.5.6.9.5l2.4-.5c.1 0 .2-.1.1-.3z"/></svg>);
-const MastercardLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="6.5" fill="#EA001B"/><circle cx="15.5" cy="12" r="6.5" fill="#F79F1A"/><path fill="#FF5F00" d="M12 18.5a6.5 6.5 0 0 0 3.5-12.15A6.5 6.5 0 0 0 8.5 12a6.5 6.5 0 0 0 3.5 6.5z"/></svg>);
-const EloLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="6" cy="12" r="4" fill="#FDB913"/><path fill="#0072BC" d="M15 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8z"/><path fill="#E31B23" d="M12 12a4 4 0 1 1-8 0a4 4 0 0 1 8 0z"/></svg>);
-const BoletoLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M2 5a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5zm1 6h2v4H3v-4zm4 0h2v4H7v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4zM2 17a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2z" fill="#000"/></svg>);
-const PicPayLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.33 13.82c-.9.9-2.05 1.54-3.4 1.54-2.2 0-3.83-1.63-3.83-3.83s1.63-3.83 3.83-3.83c1.35 0 2.5.64 3.4 1.54l1.02-1.02c-1.2-1.2-2.77-1.92-4.42-1.92-3.23 0-5.85 2.62-5.85 5.85s2.62 5.85 5.85 5.85c1.65 0 3.22-.72 4.42-1.92l-1.02-1.02zm5.48-2.67c-1.12-1.12-2.58-1.9-4.15-1.9-1.57 0-3.03.78-4.15 1.9l-1.02-1.02c1.42-1.42 3.2-2.28 5.17-2.28s3.75.86 5.17 2.28l-1.02 1.02z" fill="#21C25E"/></svg>);
-const KiwifyLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.23 13.88H8.25v-7.76h2.52v7.76zm6.3-4.15l-3-3.63h2.6l1.8 2.2 1.8-2.2h2.6l-3 3.63 3.1 4.13h-2.7l-1.9-2.3-1.9 2.3h-2.7l3.1-4.13z" fill="#7D40E7"/></svg>);
-const InterLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM17.5 17.5H6.5V6.5h11v11zM16 8h-3v8h-2V8H8v8h8V8z" fill="#FF7A00"/></svg>);
-const HotmartLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.6 3.32c-.98-.62-2.07-.98-3.23-.98-2.12 0-4.08.83-5.52 2.28-.9.9-1.57 2.02-1.88 3.24-.02.08-.03.17-.03.25.01 1.48.59 2.87 1.57 3.92.54.58 1.18 1.05 1.88 1.42l4.1-4.1V3.32zM17.6 8.5c-.32-1.22-.98-2.34-1.88-3.24l-6.02 6.02c.37.7.84 1.34 1.42 1.88 1.05 1 2.44 1.56 3.92 1.57 1.48.01 2.87-.58 3.92-1.57.99-.99 1.55-2.38 1.56-3.86 0-1.16-.36-2.25-.98-3.23-.3-.46-.66-.88-1.06-1.25l-4.02 4.02.16.16z" fill="#F04E23"/></svg>);
-const BancoDoBrasilLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z" fill="#00358E"/><path d="M14.33 7.828H9.67v2.336h4.66V7.828zM9.67 13.836h4.66V11.5h-4.66v2.336zM15.5 5.5H8.5v2.328h7V5.5zm0 8.336H8.5V11.5h7v2.336zm0 2.336H8.5V18.5h7v-2.328z" fill="#FEDA00"/></svg>);
-const ShopeeLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.88 12.33c-.16 0-.3.1-.37.24l-.6 1.52c-.08.2-.3.33-.52.33H9.6c-.22 0-.44-.13-.52-.33l-.6-1.52c-.07-.14-.2-.24-.37-.24H5.5v-1h2.6c.22 0 .44.13.52.33l.6 1.52c.07.14.2.24.37.24h3.82c.17 0 .3-.1.37-.24l.6-1.52c.08-.2.3-.33.52-.33h2.6v1h-2.61zM16.5 7h-9c-.28 0-.5.22-.5.5v4c0 .28.22.5.5.5h9c.28 0 .5-.22.5-.5v-4c0-.28-.22-.5-.5-.5zm-4.25 3.25h-2.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5h2.5c.28 0 .5.22.5.5s-.22.5-.5.5z" fill="#EE4D2D"/></svg>);
-const MercadoLivreLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z" fill="#FFE600"/><path d="M16.59 13.41L13 16V8l3.59 2.59c.53.38.53 1.24 0 1.62zm-9.18-1.62L11 8v8L7.41 13.41c-.53-.38-.53-1.24 0-1.62z" fill="#000"/></svg>);
-const NubankLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.39 13.5H14.5l-3.37-6.28V15.5h-1.8V8.5h1.9l3.37 6.27V8.5h1.8v7z" fill="#820AD1"/></svg>);
-const SpriteLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#009444"/><path d="M12 17.5a5.5 5.5 0 100-11 5.5 5.5 0 000 11z" fill="#FEF300"/><path d="M12 16.25a4.25 4.25 0 100-8.5 4.25 4.25 0 000 8.5z" fill="#00A9E0"/></svg>);
-const MercadoPagoLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z" fill="#00AEEF"/><path d="M11.63 15.11V8.89l-2.47 2.47c-.4.4-.4 1.05 0 1.45l2.47 2.3zm.74-7.67L18.5 12l-6.13 4.56V7.44z" fill="#fff"/></svg>);
-const PayPalLogo: React.FC<{className?: string}> = ({ className }) => (<svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#003087"/><path d="M13.2 6h-4.4c-.66 0-1.2.54-1.2 1.2v9.6c0 .66.54 1.2 1.2 1.2h2.8c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.4 9h-1.6c-.22 0-.4-.18-.4-.4V9.4c0-.22.18-.4.4-.4h.6c1.99 0 3.6 1.61 3.6 3.6s-1.61 3.4-3.6 3.4z" fill="#009CDE"/><path d="M10.4 9h-1c-.22 0-.4-.18-.4-.4V7c0-.22.18-.4.4-.4h2.4c1.99 0 3.6 1.61 3.6 3.6 0-1.99-1.61-3.6-3.6-3.6h-1.4v2.4z" fill="#005EA6"/></svg>);
+// --- Default Data & Assets ---
+const defaultStatusBar: StatusBarData = { time: '14:27', signal: 'wifi', battery: '86%' };
 
-const paymentMethods = [
-    { name: 'Pix', text: 'Pix', Svg: PixLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 2.502c-4.14 0-7.303 1.93-8.868 4.766l.115.068c.382.227.81.332 1.25.332 1.298 0 2.22-1.21 3.53-1.21.93 0 1.543.536 1.543 1.233 0 .977-1.48 1.48-2.52 1.834-1.78.6-3.456 1.43-3.456 3.6 0 1.953 1.553 2.87 2.915 2.87 1.03 0 1.85-.36 2.45-.85l.135.08c1.55 1.02 3.34 1.58 5.14 1.58 4.14 0 7.303-1.93 8.868-4.766l-.115-.068c-.382-.227-.81-.332-1.25-.332-1.298 0-2.22 1.21-3.53 1.21-.93 0-1.543-.536-1.543-1.233 0-.977 1.48-1.48 2.52-1.834 1.78-.6 3.456-1.43 3.456-3.6 0-1.953-1.553-2.87-2.915-2.87-1.03 0-1.85.36-2.45.85l-.135-.08c-1.55-1.02-3.34-1.58-5.14-1.58Z" fill="#32BCAD"/></svg>'},
-    { name: 'PicPay', text: 'PicPay', Svg: PicPayLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.33 13.82c-.9.9-2.05 1.54-3.4 1.54-2.2 0-3.83-1.63-3.83-3.83s1.63-3.83 3.83-3.83c1.35 0 2.5.64 3.4 1.54l1.02-1.02c-1.2-1.2-2.77-1.92-4.42-1.92-3.23 0-5.85 2.62-5.85 5.85s2.62 5.85 5.85 5.85c1.65 0 3.22-.72 4.42-1.92l-1.02-1.02zm5.48-2.67c-1.12-1.12-2.58-1.9-4.15-1.9-1.57 0-3.03.78-4.15 1.9l-1.02-1.02c1.42-1.42 3.2-2.28 5.17-2.28s3.75.86 5.17 2.28l-1.02 1.02z" fill="#21C25E"/></svg>'},
-    { name: 'MercadoPago', text: 'Mercado Pago', Svg: MercadoPagoLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z" fill="#00AEEF"/><path d="M11.63 15.11V8.89l-2.47 2.47c-.4.4-.4 1.05 0 1.45l2.47 2.3zm.74-7.67L18.5 12l-6.13 4.56V7.44z" fill="#fff"/></svg>'},
-    { name: 'PayPal', text: 'PayPal', Svg: PayPalLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#003087"/><path d="M13.2 6h-4.4c-.66 0-1.2.54-1.2 1.2v9.6c0 .66.54 1.2 1.2 1.2h2.8c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.4 9h-1.6c-.22 0-.4-.18-.4-.4V9.4c0-.22.18-.4.4-.4h.6c1.99 0 3.6 1.61 3.6 3.6s-1.61 3.4-3.6 3.4z" fill="#009CDE"/><path d="M10.4 9h-1c-.22 0-.4-.18-.4-.4V7c0-.22.18-.4.4-.4h2.4c1.99 0 3.6 1.61 3.6 3.6 0-1.99-1.61-3.6-3.6-3.6h-1.4v2.4z" fill="#005EA6"/></svg>'},
-    { name: 'Visa', text: 'Cartão de Crédito', Svg: VisaLogo, svgString: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1A1F71" d="M14.2.6H9.8L6.2 16.1l4.4.9L12.5 3l1.7 13.9 4.2-.9L14.2.6z"/><path fill="#F7A600" d="M23.1 16.1l-1.1-6.1c0-.2-.2-.4-.4-.4H17l-1.3 7.8c-.1.4.3.8.7.8.2 0 .4-.1.5-.3l1.8-6.1h3l-2.2 7.5c-.1.4.3.8.7.8h.6c.4 0 .7-.3.8-.7l.9-2.9.2-.5z"/><path fill="#1A1F71" d="M6.2 16.1L4 4.5c-.1-.4-.5-.6-.9-.5l-3 .6C0 4.7 0 4.9 0 5.1l2.8 11.7c.1.4.5.6.9.5l2.4-.5c.1 0 .2-.1.1-.3z"/></svg>'},
-    { name: 'Mastercard', text: 'Cartão de Crédito', Svg: MastercardLogo, svgString: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="6.5" fill="#EA001B"/><circle cx="15.5" cy="12" r="6.5" fill="#F79F1A"/><path fill="#FF5F00" d="M12 18.5a6.5 6.5 0 0 0 3.5-12.15A6.5 6.5 0 0 0 8.5 12a6.5 6.5 0 0 0 3.5 6.5z"/></svg>'},
-    { name: 'Elo', text: 'Cartão de Crédito', Svg: EloLogo, svgString: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="6" cy="12" r="4" fill="#FDB913"/><path fill="#0072BC" d="M15 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8z"/><path fill="#E31B23" d="M12 12a4 4 0 1 1-8 0a4 4 0 0 1 8 0z"/></svg>'},
-    { name: 'Boleto', text: 'Boleto', Svg: BoletoLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 5a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5zm1 6h2v4H3v-4zm4 0h2v4H7v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4zM2 17a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2z" fill="#000"/></svg>'},
-    { name: 'Kiwify', text: 'Kiwify', Svg: KiwifyLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.23 13.88H8.25v-7.76h2.52v7.76zm6.3-4.15l-3-3.63h2.6l1.8 2.2 1.8-2.2h2.6l-3 3.63 3.1 4.13h-2.7l-1.9-2.3-1.9 2.3h-2.7l3.1-4.13z" fill="#7D40E7"/></svg>'},
-    { name: 'Hotmart', text: 'Hotmart', Svg: HotmartLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.6 3.32c-.98-.62-2.07-.98-3.23-.98-2.12 0-4.08.83-5.52 2.28-.9.9-1.57 2.02-1.88 3.24-.02.08-.03.17-.03.25.01 1.48.59 2.87 1.57 3.92.54.58 1.18 1.05 1.88 1.42l4.1-4.1V3.32zM17.6 8.5c-.32-1.22-.98-2.34-1.88-3.24l-6.02 6.02c.37.7.84 1.34 1.42 1.88 1.05 1 2.44 1.56 3.92 1.57 1.48.01 2.87-.58 3.92-1.57.99-.99 1.55-2.38 1.56-3.86 0-1.16-.36-2.25-.98-3.23-.3-.46-.66-.88-1.06-1.25l-4.02 4.02.16.16z" fill="#F04E23"/></svg>'},
-    { name: 'Shopee', text: 'Shopee', Svg: ShopeeLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.88 12.33c-.16 0-.3.1-.37.24l-.6 1.52c-.08.2-.3.33-.52.33H9.6c-.22 0-.44-.13-.52-.33l-.6-1.52c-.07-.14-.2-.24-.37-.24H5.5v-1h2.6c.22 0 .44.13.52.33l.6 1.52c.07.14.2.24.37.24h3.82c.17 0 .3-.1.37-.24l.6-1.52c.08-.2.3-.33.52-.33h2.6v1h-2.61zM16.5 7h-9c-.28 0-.5.22-.5.5v4c0 .28.22.5.5.5h9c.28 0 .5-.22.5-.5v-4c0-.28-.22-.5-.5-.5zm-4.25 3.25h-2.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5h2.5c.28 0 .5.22.5.5s-.22.5-.5.5z" fill="#EE4D2D"/></svg>'},
-    { name: 'MercadoLivre', text: 'Mercado Livre', Svg: MercadoLivreLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z" fill="#FFE600"/><path d="M16.59 13.41L13 16V8l3.59 2.59c.53.38.53 1.24 0 1.62zm-9.18-1.62L11 8v8L7.41 13.41c-.53-.38-.53-1.24 0-1.62z" fill="#000"/></svg>'},
-    { name: 'Inter', text: 'Banco Inter', Svg: InterLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM17.5 17.5H6.5V6.5h11v11zM16 8h-3v8h-2V8H8v8h8V8z" fill="#FF7A00"/></svg>'},
-    { name: 'Nubank', text: 'Nubank', Svg: NubankLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.39 13.5H14.5l-3.37-6.28V15.5h-1.8V8.5h1.9l3.37 6.27V8.5h1.8v7z" fill="#820AD1"/></svg>'},
-    { name: 'BancoDoBrasil', text: 'Banco do Brasil', Svg: BancoDoBrasilLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z" fill="#00358E"/><path d="M14.33 7.828H9.67v2.336h4.66V7.828zM9.67 13.836h4.66V11.5h-4.66v2.336zM15.5 5.5H8.5v2.328h7V5.5zm0 8.336H8.5V11.5h7v2.336zm0 2.336H8.5V18.5h7v-2.328z" fill="#FEDA00"/></svg>'},
-    { name: 'Sprite', text: 'Sprite', Svg: SpriteLogo, svgString: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#009444"/><path d="M12 17.5a5.5 5.5 0 100-11 5.5 5.5 0 000 11z" fill="#FEF300"/><path d="M12 16.25a4.25 4.25 0 100-8.5 4.25 4.25 0 000 8.5z" fill="#00A9E0"/></svg>'},
+const eventTypes: EventType[] = ["Venda Aprovada", "Pix Gerado", "Pedido Enviado", "Venda Cancelada", "Pix Expirado"];
+
+const eventConfigs: { [key in EventType]: { accentColor: string, defaultProduct: string } } = {
+    "Venda Aprovada": { accentColor: "#22c55e", defaultProduct: "Curso de Marketing Digital" },
+    "Pix Gerado": { accentColor: "#3b82f6", defaultProduct: "E-book 'Vendas Online'" },
+    "Pedido Enviado": { accentColor: "#f97316", defaultProduct: "Kit de Ferramentas Essenciais" },
+    "Venda Cancelada": { accentColor: "#ef4444", defaultProduct: "Mentoria Individual" },
+    "Pix Expirado": { accentColor: "#6b7280", defaultProduct: "Template Exclusivo" },
+};
+
+const deviceFrames = [
+    { brand: 'Apple', models: ['iPhone 15 Pro (Titânio Natural)', 'iPhone 15 Pro (Titânio Azul)', 'iPhone 15 (Preto)', 'iPhone 15 (Rosa)', 'iPhone SE (Preto)'] },
+    { brand: 'Samsung', models: ['Samsung Galaxy S24 Ultra (Cinza Titânio)', 'Samsung Galaxy S24 (Preto)', 'Samsung Galaxy Z Fold 5 (Azul Claro)', 'Samsung Galaxy Z Flip 5 (Creme)'] },
+    { brand: 'Google', models: ['Google Pixel 8 Pro (Obsidian)', 'Google Pixel 8 (Hazel)', 'Google Pixel Fold (Porcelain)'] },
+    { brand: 'Genérico', models: ['Smartphone Android Genérico (Preto)'] },
 ];
 
-const Loader: React.FC = () => (
-    <div className="flex items-center justify-center w-full h-full p-4">
-        <div className="w-8 h-8 border-2 border-[var(--primary-accent)] border-t-transparent rounded-full animate-spin"></div>
-    </div>
-);
+const defaultAppIcons = [
+    { name: 'Nenhum', svg: '' },
+    { name: 'Seta para Cima (Verde)', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7l7-7 7 7"/></svg>` },
+    { name: 'Seta para Baixo (Vermelha)', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-7 7l7 7 7-7"/></svg>` },
+    { name: 'Checkmark (Verde)', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`},
+    { name: 'X (Vermelho)', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>` },
+    { name: 'Carrinho de Compras', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>` },
+    { name: 'Sino', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>` }
+];
 
-const NotificationGenerator: React.FC = () => {
-    const [formData, setFormData] = useState<Omit<NotificationData, 'paymentLogoSvg'>>({
-        eventType: 'Venda Aprovada',
-        value: '37,98',
-        product: 'Produto Exemplo',
-        time: 'agora',
-        client: 'Cliente Fictício',
-        paymentMethod: 'Pix',
-    });
-    const [selectedLogo, setSelectedLogo] = useState(paymentMethods[0]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [generatedNotifications, setGeneratedNotifications] = useState<(string | null)[]>([]);
+const defaultBg = {
+    base64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+F9PQAI8wNPvd7POQAAAABJRU5ErkJggg==",
+    mimeType: "image/png"
+};
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+// --- Type Definitions ---
+type SimulatorType = 'framed' | 'frameless' | 'square';
+type CustomAsset = { base64: string; mimeType: string; dataUrl: string; };
+
+// --- Main Component ---
+export const NotificationGenerator: React.FC = () => {
+    // State for notification queue and editor
+    const [notifications, setNotifications] = useState<NotificationData[]>([]);
+    const [eventType, setEventType] = useState<EventType>("Venda Aprovada");
+    const [value, setValue] = useState('R$ 1.297,00');
+    const [product, setProduct] = useState(eventConfigs["Venda Aprovada"].defaultProduct);
+    const [client, setClient] = useState('João da Silva');
+    
+    // State for screen customization
+    const [deviceFrame, setDeviceFrame] = useState(deviceFrames[0].models[0]);
+    const [statusBar] = useState<StatusBarData>(defaultStatusBar);
+    const [customAppIcon, setCustomAppIcon] = useState<CustomAsset | null>(null);
+    const [defaultAppIcon, setDefaultAppIcon] = useState(defaultAppIcons[1].svg);
+    const [customBg, setCustomBg] = useState<CustomAsset | null>(null);
+    
+    // State for async operations
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [assetTypeToGenerate, setAssetTypeToGenerate] = useState<'appIcon' | null>(null);
+    const [downloadingSimulator, setDownloadingSimulator] = useState<SimulatorType | null>(null);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
+
+    const bgFileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+      setProduct(eventConfigs[eventType].defaultProduct);
+    }, [eventType]);
+
+    const handleAddNotification = () => {
+        const newNotification: NotificationData = {
+            eventType, value, product, time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            client, paymentMethod: 'pix', paymentLogoSvg: '', accentColor: eventConfigs[eventType].accentColor
+        };
+        setNotifications(prev => [...prev, newNotification]);
     };
 
-    const handleLogoSelect = (method: typeof paymentMethods[0]) => {
-        setSelectedLogo(method);
-        setFormData(prev => ({ ...prev, paymentMethod: method.text }));
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (asset: CustomAsset) => void) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const dataUrl = event.target?.result as string;
+            const [mimeTypePart, base64Part] = dataUrl.split(';base64,');
+            setter({ base64: base64Part, mimeType: mimeTypePart.split(':')[1], dataUrl });
+        };
+        reader.readAsDataURL(file);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        setGeneratedNotifications(Array(5).fill('loading'));
+    const handleAiAssetSelect = (data: CustomAsset) => {
+        if (assetTypeToGenerate === 'appIcon') {
+            setCustomAppIcon(data);
+            setDefaultAppIcon(''); // Clear default selection
+        }
+        setIsAiModalOpen(false);
+    };
 
+    const handleDownloadSimulator = async (type: SimulatorType) => {
+        if (notifications.length === 0) {
+            setDownloadError("Adicione pelo menos uma notificação à fila antes de baixar.");
+            setTimeout(() => setDownloadError(null), 3000);
+            return;
+        }
+        setDownloadingSimulator(type);
+        setDownloadError(null);
         try {
-            const fullData: NotificationData = {
-                ...formData,
-                paymentLogoSvg: selectedLogo.svgString,
+            const appIconPayload = customAppIcon 
+                ? { base64: customAppIcon.base64, mimeType: customAppIcon.mimeType } 
+                : null;
+            
+            const backgroundPayload = customBg 
+                ? { base64: customBg.base64, mimeType: customBg.mimeType } 
+                : defaultBg;
+
+            const base64Png = await generateSingleNotificationImage({
+                notifications, statusBar, appIcon: appIconPayload, background: backgroundPayload, deviceFrame, frameType: type
+            });
+
+            // Convert PNG to JPG and trigger download
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                if(ctx){
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    const link = document.createElement('a');
+                    link.href = jpgDataUrl;
+                    link.download = `notificacao_${type}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
             };
-            const images = await generateNotificationImages(fullData);
-            setGeneratedNotifications(images);
+            img.src = `data:image/png;base64,${base64Png}`;
+
         } catch (err) {
-            const error = err as Error;
-            setError(error.message || 'Ocorreu um erro desconhecido.');
-            setGeneratedNotifications([]);
+            const e = err as Error;
+            setDownloadError(e.message || "Ocorreu um erro desconhecido.");
         } finally {
-            setIsLoading(false);
+            setDownloadingSimulator(null);
         }
     };
+    
+    const currentAppIcon = customAppIcon?.dataUrl || (defaultAppIcon ? `data:image/svg+xml;base64,${btoa(defaultAppIcon)}` : null);
+    const currentBgUrl = customBg?.dataUrl || `data:image/png;base64,${defaultBg.base64}`;
 
     return (
-        <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] p-6">
-            <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                        <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Evento</label>
-                        <select id="eventType" name="eventType" value={formData.eventType} onChange={handleInputChange} className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300">
-                            <option>Venda Aprovada</option>
-                            <option>Pix Gerado</option>
-                            <option>Pedido Enviado</option>
-                            <option>Venda Cancelada</option>
-                            <option>Pix Expirado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="value" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
-                        <input type="text" id="value" name="value" value={formData.value} onChange={handleInputChange} className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300" placeholder="Ex: 99,90" />
-                    </div>
-                    <div>
-                        <label htmlFor="product" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Produto</label>
-                        <input type="text" id="product" name="product" value={formData.product} onChange={handleInputChange} className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300" />
-                    </div>
-                    <div>
-                        <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horário</label>
-                        <input type="text" id="time" name="time" value={formData.time} onChange={handleInputChange} className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300" placeholder="agora" />
-                    </div>
-                    <div>
-                        <label htmlFor="client" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Cliente</label>
-                        <input type="text" id="client" name="client" value={formData.client} onChange={handleInputChange} className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900/50 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-lg focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none transition-all duration-300" />
-                    </div>
-                </div>
-                <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logo / Método de Pagamento</label>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
-                        {paymentMethods.map(method => (
-                            <button key={method.name} type="button" onClick={() => handleLogoSelect(method)} className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all ${selectedLogo.name === method.name ? 'border-[var(--primary-accent)] bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                                <method.Svg className="h-8 w-8 object-contain" />
-                                <span className="text-xs mt-1 text-center leading-tight">{method.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="mt-4">
-                    <button type="submit" disabled={isLoading} className="w-full px-6 py-3 gradient-bg text-white font-bold rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-accent)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105">
-                        {isLoading ? 'Gerando Imagens...' : 'Gerar 5 Designs de Notificação'}
-                    </button>
-                </div>
-            </form>
-            
-            {error && <p className="mt-4 text-sm text-red-500 text-center">{error}</p>}
-
-            {generatedNotifications.length > 0 && (
-                <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-center mb-4">Designs Gerados</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {generatedNotifications.map((asset, index) => (
-                            <div key={`notification-${index}`} className="aspect-[9/19] rounded-lg border border-[var(--border-light)] dark:border-[var(--border-dark)] overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-105 group">
-                                {asset === 'loading' ? <Loader /> : asset ? (
-                                    <a href={`data:image/png;base64,${asset}`} download={`notificacao_${formData.eventType.replace(' ','_')}_${index + 1}.png`} className="block w-full h-full relative">
-                                        <img src={`data:image/png;base64,${asset}`} alt={`Notificação gerada ${index + 1}`} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">Download</div>
-                                    </a>
-                                ) : <div className="w-full h-full flex items-center justify-center text-xs text-red-500 p-2 text-center">Falha ao gerar</div>}
+    <>
+        <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)]">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6">
+                {/* --- CONTROLS --- */}
+                <div className="lg:col-span-2 space-y-4">
+                    {/* Editor */}
+                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-black/20 border border-[var(--border-light)] dark:border-[var(--border-dark)] space-y-3">
+                         <h3 className="text-lg font-bold">Editor de Notificação</h3>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Tipo de Evento</label>
+                            <select value={eventType} onChange={e => setEventType(e.target.value as EventType)} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm">
+                                {eventTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Valor</label>
+                                <input type="text" value={value} onChange={e => setValue(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm" placeholder="R$ 1.297,00" />
                             </div>
-                        ))}
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Produto</label>
+                                <input type="text" value={product} onChange={e => setProduct(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm" />
+                            </div>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium mb-1">Nome do Cliente</label>
+                            <input type="text" value={client} onChange={e => setClient(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm" placeholder="João da Silva" />
+                        </div>
+                        <button onClick={handleAddNotification} className="w-full px-4 py-2 gradient-bg text-white font-bold rounded-lg hover:opacity-90 text-sm">Adicionar à Fila</button>
+                    </div>
+
+                    {/* Fila */}
+                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-black/20 border border-[var(--border-light)] dark:border-[var(--border-dark)]">
+                        <div className="flex justify-between items-center mb-2">
+                             <h3 className="text-lg font-bold">Fila para Geração</h3>
+                             <button onClick={() => setNotifications([])} className="text-xs text-gray-500 hover:text-red-500">Limpar</button>
+                        </div>
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            {notifications.length > 0 ? notifications.map((n, i) => (
+                                <div key={i} className="text-xs p-2 rounded bg-white dark:bg-gray-800 flex justify-between items-center">
+                                    <span><b>{n.eventType}</b> - {n.product}</span>
+                                    <button onClick={() => setNotifications(p => p.filter((_, idx) => idx !== i))} className="text-red-500 text-lg">&times;</button>
+                                </div>
+                            )) : <p className="text-xs text-gray-500 text-center py-4">A fila está vazia.</p>}
+                        </div>
+                    </div>
+                    
+                    {/* Customização */}
+                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-black/20 border border-[var(--border-light)] dark:border-[var(--border-dark)] space-y-3">
+                         <h3 className="text-lg font-bold">Customização da Tela</h3>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Moldura do Celular</label>
+                            <select value={deviceFrame} onChange={e => setDeviceFrame(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm">
+                                {deviceFrames.map(group => (
+                                    <optgroup key={group.brand} label={group.brand}>
+                                        {group.models.map(model => <option key={model} value={model}>{model}</option>)}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Ícone do App</label>
+                                <select value={defaultAppIcon} onChange={e => {setDefaultAppIcon(e.target.value); setCustomAppIcon(null)}} className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-[var(--border-light)] dark:border-[var(--border-dark)] rounded-md focus:ring-1 focus:ring-[var(--primary-accent)] outline-none text-sm">
+                                    {defaultAppIcons.map(icon => <option key={icon.name} value={icon.svg}>{icon.name}</option>)}
+                                </select>
+                            </div>
+                             <div className="self-end grid grid-cols-2 gap-1">
+                                <button onClick={() => { setAssetTypeToGenerate('appIcon'); setIsAiModalOpen(true); }} className="px-2 py-2 text-xs font-semibold bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md">Gerar IA</button>
+                                <button onClick={() => { setAssetTypeToGenerate('appIcon'); document.getElementById('custom-icon-upload')?.click() }} className="px-2 py-2 text-xs font-semibold bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md">Upload</button>
+                                <input id="custom-icon-upload" type="file" className="hidden" accept="image/*" onChange={e => handleFileChange(e, setCustomAppIcon)} />
+                             </div>
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium mb-1">Plano de Fundo</label>
+                             <input type="file" ref={bgFileInputRef} className="hidden" accept="image/*" onChange={e => handleFileChange(e, setCustomBg)} />
+                             <button onClick={() => bgFileInputRef.current?.click()} className="w-full px-3 py-2 text-sm font-semibold bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md">{customBg ? 'Alterar Imagem' : 'Carregar Imagem'}</button>
+                        </div>
+                    </div>
+                     {downloadError && <p className="text-sm text-red-500 text-center">{downloadError}</p>}
+                </div>
+
+                {/* --- PREVIEWS --- */}
+                <div className="lg:col-span-3 flex justify-center items-start">
+                    <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                        <SimulatorPreview title="Com Moldura" type="framed" onDownload={handleDownloadSimulator} isLoading={downloadingSimulator === 'framed'} device={deviceFrame}>
+                            <NotificationScreen notifications={notifications} statusBar={statusBar} appIconUrl={currentAppIcon} backgroundUrl={currentBgUrl} />
+                        </SimulatorPreview>
+                        <SimulatorPreview title="Sem Moldura" type="frameless" onDownload={handleDownloadSimulator} isLoading={downloadingSimulator === 'frameless'}>
+                            <NotificationScreen notifications={notifications} statusBar={statusBar} appIconUrl={currentAppIcon} backgroundUrl={currentBgUrl} />
+                        </SimulatorPreview>
+                        <SimulatorPreview title="Quadro Reto" type="square" onDownload={handleDownloadSimulator} isLoading={downloadingSimulator === 'square'}>
+                            <NotificationScreen notifications={notifications} statusBar={statusBar} appIconUrl={currentAppIcon} backgroundUrl={currentBgUrl} />
+                        </SimulatorPreview>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
+
+        <AiAssetGeneratorModal 
+            isOpen={isAiModalOpen}
+            onClose={() => setIsAiModalOpen(false)}
+            onSelect={handleAiAssetSelect}
+            assetType={assetTypeToGenerate}
+        />
+    </>
     );
 };
 
-export default NotificationGenerator;
+// --- Sub-components for Preview ---
+
+const SimulatorPreview: React.FC<{title: string, type: SimulatorType, onDownload: (type: SimulatorType) => void, isLoading: boolean, children: React.ReactNode, device?: string}> = ({title, type, onDownload, isLoading, children, device}) => {
+    let containerClass = "w-full max-w-[280px] mx-auto transition-all duration-300 ";
+    switch (type) {
+        case 'framed': containerClass += "p-2.5 bg-zinc-800 rounded-[40px] shadow-2xl border-2 border-zinc-700"; break;
+        case 'frameless': containerClass += "rounded-[32px] overflow-hidden shadow-lg"; break;
+        case 'square': containerClass += "shadow-lg border border-gray-300 dark:border-gray-700"; break;
+    }
+
+    const deviceSpecificStyles = {
+        notch: type === 'framed' && device?.includes('iPhone') && !device?.includes('SE'),
+        dynamicIsland: type === 'framed' && device?.includes('iPhone 15'),
+        punchHole: type === 'framed' && (device?.includes('Samsung') || device?.includes('Google')),
+    };
+    
+    return (
+        <div className="flex flex-col items-center gap-3">
+            <h4 className="text-sm font-semibold text-gray-500">{title}</h4>
+            <div className={containerClass}>
+                <div className={`relative bg-black overflow-hidden w-full aspect-[9/19.5] ${type === 'framed' ? 'rounded-[32px]' : ''}`}>
+                    {deviceSpecificStyles.dynamicIsland && <div className="absolute top-[14px] left-1/2 -translate-x-1/2 h-[18px] w-[80px] bg-black rounded-full z-20"></div>}
+                    {deviceSpecificStyles.punchHole && <div className="absolute top-[18px] left-1/2 -translate-x-1/2 h-[8px] w-[8px] bg-black rounded-full z-20 border border-zinc-700"></div>}
+                    {children}
+                </div>
+            </div>
+            <button onClick={() => onDownload(type)} disabled={isLoading} className="w-full max-w-[280px] mt-1 px-4 py-2 text-sm font-bold gradient-bg text-white rounded-lg hover:opacity-90 disabled:opacity-50">
+                {isLoading ? 'Gerando...' : 'Download JPG'}
+            </button>
+        </div>
+    )
+};
+
+const NotificationScreen: React.FC<{notifications: NotificationData[], statusBar: StatusBarData, appIconUrl: string | null, backgroundUrl: string}> = React.memo(({notifications, statusBar, appIconUrl, backgroundUrl}) => {
+    return (
+        <div className="absolute inset-0 text-white font-sans text-xs">
+            {/* Background */}
+            <img src={backgroundUrl} className="absolute inset-0 w-full h-full object-cover" alt="background"/>
+            <div className="absolute inset-0 bg-black/10"></div>
+
+            {/* Status Bar */}
+            <div className="absolute top-0 left-0 right-0 h-9 px-6 flex justify-between items-center z-10 pt-2">
+                <span className="font-bold text-xs w-12 text-center">{statusBar.time}</span>
+                <div className="flex items-center gap-1.5 text-xs">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <span>{statusBar.battery}</span>
+                </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="absolute top-12 left-2 right-2 space-y-2">
+                {notifications.slice(-4).map((n, i) => (
+                    <div key={i} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3">
+                         <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center gap-1.5">
+                                {appIconUrl && <img src={appIconUrl} className="w-4 h-4 rounded-sm" alt="App Icon"/>}
+                                <span className="text-xs font-semibold">Minha Loja</span>
+                            </div>
+                            <span className="text-xs text-gray-300">{n.time}</span>
+                        </div>
+                        <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-sm">{n.eventType}</span>
+                            <span className="font-bold text-sm" style={{color: n.accentColor}}>{n.value}</span>
+                        </div>
+                         {n.eventType === "Venda Aprovada" && <span className="text-green-400 text-xs font-bold">✓ Aprovado</span>}
+                        <p className="text-xs text-gray-200 truncate">Produto: {n.product} | Cliente: {n.client}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});

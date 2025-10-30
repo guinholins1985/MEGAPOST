@@ -1,4 +1,3 @@
-
 export type InputMode = 'image' | 'url' | 'camera';
 
 export type ImageType = 
@@ -22,6 +21,15 @@ export type ImageType =
   | 'template_instagram_story'
   | 'vertical_tiktok_reels'
   | 'vertical_whatsapp_status'
+
+  // Campanhas Temáticas e Sazonais (NOVO)
+  | 'post_seasonal_christmas'
+  | 'banner_seasonal_valentines'
+
+  // Estilos Criativos e Abstratos (NOVO)
+  | 'style_minimalist'
+  | 'style_luxury'
+  | 'style_surreal'
 
   // Efeitos e Mídias Dinâmicas
   | 'effect_3d_shadow'
@@ -50,6 +58,7 @@ export type GeneratedContent = {
   socialMediaPosts: string[];
   shortVideoScripts: string[];
   fictionalTestimonials: string[];
+  socialMediaBios: string[];
   
   // SEO Avançado e Marketing de Conteúdo
   longTailKeywords: string[];
@@ -65,6 +74,11 @@ export type GeneratedContent = {
   discountCoupons: string[];
   countdownPromos: string[];
   popupCopies: string[];
+  adCopies: string[];
+  ctas: string[];
+  welcomeEmails: string[];
+  slogans: string[];
+  viralHooks: string[];
 
   // Ferramentas Avançadas e Interativas
   landingPageCopies: string[];
@@ -77,12 +91,19 @@ export type GeneratedContent = {
 
 export type EventType = "Venda Aprovada" | "Pix Gerado" | "Pedido Enviado" | "Venda Cancelada" | "Pix Expirado";
 
+export type StatusBarData = {
+    time: string;
+    signal: 'wifi' | '5g';
+    battery: string;
+}
+
 export type NotificationData = {
     eventType: EventType;
     value: string;
     product: string;
     time: string;
     client: string;
-    paymentMethod: string; // The text to display, e.g., "Cartão de Crédito"
-    paymentLogoSvg: string; // The raw SVG string for the logo image
+    paymentMethod: string;
+    paymentLogoSvg: string;
+    accentColor: string;
 };

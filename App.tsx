@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import InputTabs from './components/InputTabs';
 import ResultDisplay from './components/ResultDisplay';
 import type { GeneratedContent } from './types';
 import ProductMediaGenerator from './components/ProductMediaGenerator';
 import BrandIdentityGenerator from './components/BrandIdentityGenerator';
 import CompletionModal from './components/CompletionModal';
-import NotificationGenerator from './components/NotificationGenerator';
+import { NotificationGenerator } from './components/NotificationGenerator';
+import ShowcaseGallery from './components/ShowcaseGallery';
 
 const initialContentState: GeneratedContent = {
   // Conteúdo Essencial
@@ -19,6 +20,7 @@ const initialContentState: GeneratedContent = {
   socialMediaPosts: [],
   shortVideoScripts: [],
   fictionalTestimonials: [],
+  socialMediaBios: [],
   
   // SEO Avançado e Marketing de Conteúdo
   longTailKeywords: [],
@@ -34,6 +36,11 @@ const initialContentState: GeneratedContent = {
   discountCoupons: [],
   countdownPromos: [],
   popupCopies: [],
+  adCopies: [],
+  ctas: [],
+  welcomeEmails: [],
+  slogans: [],
+  viralHooks: [],
 
   // Ferramentas Avançadas e Interativas
   landingPageCopies: [],
@@ -72,7 +79,7 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; children: Re
 );
 
 const TestimonialCard: React.FC<{ quote: string; name: string; role: string; avatar: string }> = ({ quote, name, role, avatar }) => (
-    <div className="bg-[var(--card-light)] dark:bg-gray-900/50 p-6 rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-lg h-full flex flex-col">
+    <div className="bg-[var(--card-light)] dark:bg-gray-900/50 p-6 rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-lg h-full flex flex-col hover:border-[var(--primary-accent)] transition-colors">
         <p className="text-gray-600 dark:text-gray-400 flex-grow">"{quote}"</p>
         <div className="flex items-center mt-6">
             <img className="h-12 w-12 rounded-full object-cover" src={avatar} alt={name} />
@@ -84,49 +91,6 @@ const TestimonialCard: React.FC<{ quote: string; name: string; role: string; ava
     </div>
 );
 
-const Button3D: React.FC<{ children: React.ReactNode; onClick: () => void; className?: string }> = ({ children, onClick, className = '' }) => (
-    <button onClick={onClick} className={`button-3d ${className}`}>
-        <span className="button-3d-front">{children}</span>
-        <style jsx>{`
-            .button-3d {
-                position: relative;
-                display: inline-block;
-                border: none;
-                background: transparent;
-                padding: 0;
-                cursor: pointer;
-                outline-offset: 4px;
-                transition: filter 250ms;
-                -webkit-tap-highlight-color: transparent;
-            }
-            .button-3d-front {
-                display: block;
-                position: relative;
-                padding: 1rem 2.5rem;
-                border-radius: 12px;
-                font-size: 1.25rem;
-                font-weight: bold;
-                background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
-                color: white;
-                transform: translateY(-6px);
-                transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
-            }
-            .button-3d:hover .button-3d-front {
-                transform: translateY(-8px);
-                transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
-            }
-            .button-3d:active .button-3d-front {
-                transform: translateY(-2px);
-                transition: transform 34ms;
-            }
-            .button-3d:focus:not(:focus-visible) {
-                outline: none;
-            }
-        `}</style>
-    </button>
-);
-
-
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent>(initialContentState);
@@ -134,7 +98,18 @@ const App: React.FC = () => {
   const [sourceImage, setSourceImage] = useState<{ base64: string; mimeType: string; } | null>(null);
   const [workspaceActive, setWorkspaceActive] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
+  const workspaceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
   const handleGeneration = (content: GeneratedContent) => {
     setGeneratedContent(content);
     if(content.titles.length > 0) {
@@ -161,6 +136,14 @@ const App: React.FC = () => {
     setError(null);
     setSourceImage(null);
     setIsLoading(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStartCreating = () => {
+    setWorkspaceActive(true);
+    setTimeout(() => {
+        workspaceRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleCloseCompletionModal = () => {
@@ -174,61 +157,76 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen text-[var(--text-light)] dark:text-[var(--text-dark)] font-sans transition-colors duration-300">
       <CompletionModal isOpen={showCompletionModal} onClose={handleCloseCompletionModal} />
-      <main className="container mx-auto px-4 py-8 md:py-12">
+      
+      <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled || workspaceActive ? 'py-3 bg-[var(--background-light)]/80 dark:bg-[var(--background-dark)]/80 backdrop-blur-lg border-b border-[var(--border-light)] dark:border-[var(--border-dark)] shadow-sm' : 'py-6'}`}>
+          <div className="container mx-auto px-4 flex justify-between items-center">
+              <a href="#" onClick={(e) => { e.preventDefault(); resetToHome(); }} className="flex items-center gap-2">
+                  <Logo className="h-8 w-8"/>
+                  <span className="font-bold text-xl hidden sm:inline">MEGAPOST</span>
+              </a>
+              <button onClick={handleStartCreating} className="px-4 py-2 text-sm font-semibold gradient-bg text-white rounded-lg transition-transform hover:scale-105 glow-on-hover">
+                  Começar a Criar
+              </button>
+          </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 md:py-12 pt-24">
         
         {!workspaceActive ? (
           <div className="space-y-24 md:space-y-32">
             {/* Hero Section */}
             <header className="text-center py-16 md:py-24 relative overflow-hidden">
-                <div 
-                  className="absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,white,transparent_40%)]"
-                  style={{backgroundImage: 'radial-gradient(circle at 50% 50%, var(--primary-accent) 0%, transparent 25%), radial-gradient(circle at 10% 20%, var(--secondary-accent) 0%, transparent 25%), radial-gradient(circle at 90% 80%, var(--primary-accent) 0%, transparent 25%)', opacity: 0.15, filter: 'blur(60px)'}}
-                ></div>
-                <div className="flex justify-center mb-6">
-                  <Logo className="h-24 w-24" />
-                </div>
-                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold leading-tight tracking-tighter mb-4">
+              <div 
+                  className="absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,white,transparent_50%)]"
+                  style={{
+                      backgroundImage: 'radial-gradient(circle at 50% 50%, var(--primary-accent) 0%, transparent 20%), radial-gradient(circle at 10% 20%, var(--secondary-accent) 0%, transparent 25%), radial-gradient(circle at 90% 80%, var(--primary-accent) 0%, transparent 25%)',
+                      opacity: 0.15,
+                      filter: 'blur(80px)',
+                  }}
+              />
+
+                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-tight tracking-tighter mb-4 uppercase">
                     <span className="gradient-text">MEGAPOST</span>
                 </h1>
-                <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tighter">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
                     Sua Agência de Marketing em um Clique.
                 </h2>
                 <p className="mt-6 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
                     De posts virais a uma identidade visual completa. Crie tudo o que você precisa com o poder da IA generativa.
                 </p>
-                <div className="mt-10">
-                    <Button3D onClick={() => setWorkspaceActive(true)}>
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <button onClick={handleStartCreating} className="px-8 py-4 text-lg font-bold gradient-bg text-white rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-accent)] transition-all duration-300 shadow-lg transform hover:scale-105 glow-on-hover">
                         Começar a Criar Agora
-                    </Button3D>
+                    </button>
+                </div>
+                 <div className="mt-8 flex justify-center items-center">
+                    <div className="flex -space-x-2 overflow-hidden">
+                        <img className="inline-block h-8 w-8 rounded-full ring-2 ring-[var(--background-light)] dark:ring-[var(--background-dark)]" src="https://i.pravatar.cc/40?u=a" alt=""/>
+                        <img className="inline-block h-8 w-8 rounded-full ring-2 ring-[var(--background-light)] dark:ring-[var(--background-dark)]" src="https://i.pravatar.cc/40?u=b" alt=""/>
+                        <img className="inline-block h-8 w-8 rounded-full ring-2 ring-[var(--background-light)] dark:ring-[var(--background-dark)]" src="https://i.pravatar.cc/40?u=c" alt=""/>
+                    </div>
+                    <p className="ml-3 text-sm text-gray-500">Junte-se a +10.000 criadores</p>
                 </div>
             </header>
 
             {/* Features Section */}
-            <section className="py-16 md:py-24">
+            <section id="features" className="py-16 md:py-24">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Uma Ferramenta, Potencial Ilimitado</h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-12 max-w-3xl mx-auto">O MEGAPOST é o seu time de marketing, design e redação, disponível 24/7.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                    <FeatureCard title="Textos que Convertem" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}>
+                    <FeatureCard title="Textos que Convertem" icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21.707 2.293a1 1 0 0 0-1.414 0l-18 18a1 1 0 0 0 0 1.414a1 1 0 0 0 .707.293a1 1 0 0 0 .707-.293l18-18a1 1 0 0 0 0-1.414Z"/><path d="m19.274 6.55-4.243-4.242a1 1 0 0 0-1.414 0L2.383 13.54a1.002 1.002 0 0 0-.293.708v4.242a1 1 0 0 0 1 1h4.242a1 1 0 0 0 .707-.293l11.235-11.234a1 1 0 0 0 0-1.415ZM7.49 17.51H5.414v-2.076l7.849-7.849l2.076 2.076Z"/></svg>}>
                         Gere títulos, descrições, posts para redes sociais, e-mails e roteiros de vídeo, otimizados para SEO e engajamento.
                     </FeatureCard>
-                    <FeatureCard title="Mídia Visual de Impacto" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}>
+                    <FeatureCard title="Mídia Visual de Impacto" icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3H8C4.691 3 2 5.691 2 9v6c0 3.309 2.691 6 6 6h8c3.309 0 6-2.691 6-6V9c0-3.309-2.691-6-6-6zm4 12c0 2.206-1.794 4-4 4H8c-2.206 0-4-1.794-4-4V9c0-2.206 1.794-4 4-4h8c2.206 0 4 1.794 4 4v6z"/><path d="m14.829 7.414-2.586 2.586a2 2 0 0 0 0 2.828l2.586 2.586a1 1 0 0 0 1.414-1.414L13.414 12l2.829-2.829a1 1 0 0 0-1.414-1.414zM8 12a1 1 0 1 0 0-2a1 1 0 0 0 0 2z"/></svg>}>
                         Transforme fotos de produtos em imagens profissionais, mockups realistas e banners para qualquer plataforma.
                     </FeatureCard>
-                    <FeatureCard title="Identidade de Marca Instantânea" icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517M11.414 15.414a2 2 0 01-2.828 0L8.586 12 11.414 9.172a2 2 0 012.828 0L17 12m-8.586 3.414a2 2 0 000 2.828l2.387.477a2 2 0 001.022.547M12 18a6 6 0 00-3.86-.517m0 0a6 6 0 01-3.86-.517M12 6a6 6 0 013.86.517m0 0a6 6 0 003.86.517M12 6a6 6 0 00-3.86.517M3.428 8.572a2 2 0 001.022.547l2.387.477a6 6 0 003.86-.517M7.172 9.172a2 2 0 010-2.828L8.586 5 11.414 7.828a2 2 0 010 2.828m0 0l2.829 2.829m-2.829-2.829l-2.828 2.828" /></svg>}>
+                    <FeatureCard title="Identidade de Marca Instantânea" icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10c5.515 0 10-4.486 10-10S17.515 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M12 10c-1.103 0-2 .897-2 2s.897 2 2 2 2-.897 2-2-.897-2-2-2z"/></svg>}>
                         Crie logos e banners profissionais em segundos a partir de uma simples ideia, com ou sem imagens de referência.
                     </FeatureCard>
                 </div>
             </section>
             
-            {/* Showcase Banner */}
-            <section className="relative overflow-hidden rounded-2xl p-8 md:p-16 flex items-center justify-center text-center gradient-bg shadow-2xl">
-                <div className="relative z-10">
-                    <h2 className="text-4xl md:text-5xl font-extrabold text-white">Transforme Ideias em Realidade Visual</h2>
-                    <p className="mt-4 text-lg text-indigo-200 max-w-2xl mx-auto">De um simples prompt a uma campanha visual completa. Veja o poder da IA em ação.</p>
-                </div>
-                 <div className="absolute -bottom-1/2 -left-1/4 w-full h-full bg-white/10 rounded-full blur-3xl opacity-50"></div>
-                 <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-white/10 rounded-full blur-3xl opacity-50"></div>
-            </section>
+            <ShowcaseGallery />
 
             {/* Testimonials */}
             <section className="py-16 md:py-24">
@@ -262,55 +260,20 @@ const App: React.FC = () => {
                  <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-10">
                     Junte-se a milhares de criadores que estão construindo marcas mais fortes e vendendo mais com MEGAPOST.
                  </p>
-                 <Button3D onClick={() => setWorkspaceActive(true)}>
+                 <button onClick={handleStartCreating} className="px-8 py-4 text-lg font-bold gradient-bg text-white rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-accent)] transition-all duration-300 shadow-lg transform hover:scale-105 glow-on-hover">
                     Criar minha Campanha Grátis
-                </Button3D>
+                </button>
              </section>
           </div>
         ) : (
-          <div id="workspace" className="max-w-7xl mx-auto mt-8">
+          <div id="workspace" ref={workspaceRef} className="max-w-7xl mx-auto mt-8">
             <header className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                    <Logo className="h-10 w-10"/>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text">MEGAPOST Workspace</h1>
-                </div>
-              <button onClick={resetToHome} className="px-4 py-2 text-sm font-semibold bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                Voltar ao Início
-              </button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text">MEGAPOST Workspace</h1>
             </header>
 
             <div className="space-y-16">
               
-              {/* Standalone Brand Tools */}
-              <section>
-                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Ferramentas de Identidade Visual</h2>
-                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">
-                    Crie logos e banners profissionais de forma independente, a qualquer momento.
-                 </p>
-                 <BrandIdentityGenerator />
-              </section>
-
-              {/* Engagement Tools */}
-              <section>
-                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Ferramentas de Engajamento</h2>
-                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">
-                    Gere notificações de vendas para usar em vídeos e stories.
-                 </p>
-                 <NotificationGenerator />
-              </section>
-
-
-              <div className="relative my-12">
-                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-[var(--border-light)] dark:border-[var(--border-dark)]"></div>
-                </div>
-                <div className="relative flex justify-center">
-                    <span className="bg-[var(--background-light)] dark:bg-[var(--background-dark)] px-4 text-sm font-medium text-gray-500">OU</span>
-                </div>
-              </div>
-              
-              {/* Product-based Campaign Generator */}
-              <section>
+              <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] p-6 md:p-8">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Crie sua Campanha Completa</h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">Forneça um produto (imagem, câmera ou link) para gerar textos e mídias visuais contextuais.</p>
                 <div className="max-w-4xl mx-auto">
@@ -322,7 +285,7 @@ const App: React.FC = () => {
                     onSourceImageReady={handleSourceImage}
                   />
                 </div>
-              </section>
+              </div>
 
               <ResultDisplay 
                 isLoading={isLoading} 
@@ -335,11 +298,37 @@ const App: React.FC = () => {
                     sourceImage={sourceImage}
                 />
               )}
+
+              <div className="relative my-12">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-[var(--border-light)] dark:border-[var(--border-dark)]"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-[var(--background-light)] dark:bg-[var(--background-dark)] px-4 text-sm font-medium text-gray-500">FERRAMENTAS ADICIONAIS</span>
+                </div>
+              </div>
+
+              <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] p-6 md:p-8">
+                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Ferramentas de Identidade Visual</h2>
+                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">
+                    Crie logos e banners profissionais de forma independente, a qualquer momento.
+                 </p>
+                 <BrandIdentityGenerator />
+              </div>
+
+              <div className="bg-[var(--card-light)] dark:bg-[var(--card-dark)] shadow-xl rounded-2xl border border-[var(--border-light)] dark:border-[var(--border-dark)] p-6 md:p-8">
+                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Ferramentas de Engajamento</h2>
+                 <p className="text-lg text-gray-600 dark:text-gray-400 text-center mb-8 max-w-4xl mx-auto">
+                    Gere notificações de vendas para usar em vídeos e stories.
+                 </p>
+                 <NotificationGenerator />
+              </div>
+
             </div>
           </div>
         )}
 
-        <footer className="text-center mt-24 text-sm text-gray-500 dark:text-gray-500">
+        <footer className="text-center mt-24 py-8 border-t border-[var(--border-light)] dark:border-[var(--border-dark)] text-sm text-gray-500 dark:text-gray-500">
           <p>Powered by Google Gemini</p>
         </footer>
       </main>

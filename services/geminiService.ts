@@ -1,372 +1,366 @@
-import { GoogleGenAI, Modality } from "@google/genai";
-import type { GeneratedContent, NotificationData } from '../types';
-
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set.");
-}
+// Fix: Create the geminiService.ts file to handle all Gemini API interactions.
+import { GoogleGenAI, Type, Modality } from "@google/genai";
+import type { GeneratedContent, NotificationData, StatusBarData } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const commonPrompt = `
-Gere o seguinte conteúdo em português do Brasil, de forma clara e organizada, usando as seções demarcadas por '###'. Seja criativo e foque em conversão.
-
-### Títulos
-15 títulos de marketing chamativos e otimizados para SEO. Formate como uma lista numerada.
-
-### Descrições
-3 descrições de produto persuasivas, que comuniquem alto valor. Formate como uma lista numerada.
-
-### Preço Sugerido (Shopee)
-Estime o preço médio de mercado para este produto. Se um link for fornecido, use-o como referência principal. Com base nisso, sugira um preço de venda para a Shopee. Apresente o cálculo, assumindo uma taxa de 20% da Shopee (comissão + programa de frete grátis). Formate como uma lista: "Preço Base Médio:", "Taxa Shopee (20%):", "Preço de Venda Sugerido:".
-
-### Tags SEO
-25 tags SEO relevantes. Formate como UMA ÚNICA LINHA de palavras separadas por vírgulas.
-
-### Hashtags
-25 hashtags populares e relevantes. Formate como UMA ÚNICA LINHA de hashtags separadas por vírgulas.
-
-### Frases para Redes Sociais
-25 frases para postagens em redes sociais. Formate como uma lista numerada.
-
-### Scripts para Vídeos Curtos
-3 scripts para vídeos curtos (Reels/TikTok) de 15-30 segundos. Formate cada script com "### Script [Número]" e depois "Cena 1:", "Cena 2:", etc.
-
-### Depoimentos Fictícios
-3 depoimentos fictícios. Formate como uma lista numerada, com um nome fictício.
-
-### Keywords Long-Tail
-12 keywords long-tail para SEO. Formate como uma lista numerada.
-
-### Meta Tags e Alt Text
-7 meta descriptions e alt texts para imagens. Formate como uma lista numerada, indicando se é "Meta:" ou "Alt Text:".
-
-### Artigos para Blog
-4 ideias de títulos e um breve resumo para artigos de blog. Formate como uma lista numerada.
-
-### Guias de Compra
-3 ideias para guias de compra comparativos. Formate como uma lista numerada.
-
-### Perguntas Frequentes (FAQ)
-7 perguntas e respostas frequentes sobre o produto. Formate cada item como uma nova linha começando com "P: [Pergunta]" seguido de uma nova linha com "R: [Resposta]".
-
-### Frases Promocionais
-25 frases promocionais de venda, curtas e impactantes. Formate como uma lista numerada.
-
-### E-mails Marketing
-4 e-mails marketing (lançamento, promoção, pós-venda). Formate cada e-mail com "### E-mail [Número]", "Assunto:" e "Corpo:".
-
-### Variações de Preço
-4 sugestões de variações de preço e descontos. Formate como uma lista numerada.
-
-### Cupons de Desconto
-7 ideias de cupons de desconto (códigos e descrições). Formate como uma lista numerada.
-
-### Contagens Regressivas
-3 textos para banners de contagem regressiva. Formate como uma lista numerada.
-
-### Pop-ups Promocionais
-4 textos para pop-ups promocionais. Formate como uma lista numerada.
-
-### Landpages Simples
-2 estruturas de texto para landpages. Formate cada uma com "### Landpage [Número]" e seções como "Título:", "Benefícios:", "CTA:".
-
-### Comparativos com Concorrentes
-2 exemplos de textos para uma tabela comparativa. Formate como uma lista numerada.
-
-### Quizzes Interativos
-3 ideias de quizzes interativos. Formate como uma lista numerada com título e exemplos de perguntas.
-
-### Chatbots de Atendimento
-2 exemplos de scripts para chatbots com respostas a dúvidas frequentes. Formate com "### Chatbot [Número]" e depois "Usuário:" e "Bot:".
-`;
-
-const parseResponse = (responseText: string): Omit<GeneratedContent, 'groundingChunks'> => {
-    const sections = {
+// Define the response schema for the main content generation
+const contentGenerationSchema = {
+    type: Type.OBJECT,
+    properties: {
         // Conteúdo Essencial
-        titles: '### Títulos',
-        descriptions: '### Descrições',
-        productPricing: '### Preço Sugerido (Shopee)',
-        tags: '### Tags SEO',
-        hashtags: '### Hashtags',
-        // Redes Sociais e Engajamento
-        socialMediaPosts: '### Frases para Redes Sociais',
-        shortVideoScripts: '### Scripts para Vídeos Curtos',
-        fictionalTestimonials: '### Depoimentos Fictícios',
-        // SEO Avançado e Marketing de Conteúdo
-        longTailKeywords: '### Keywords Long-Tail',
-        metaTagsAndAltTexts: '### Meta Tags e Alt Text',
-        blogArticles: '### Artigos para Blog',
-        buyingGuides: '### Guias de Compra',
-        faqs: '### Perguntas Frequentes (FAQ)',
-        // Campanhas de Vendas e Promoções
-        promotionalPhrases: '### Frases Promocionais',
-        marketingEmails: '### E-mails Marketing',
-        priceVariations: '### Variações de Preço',
-        discountCoupons: '### Cupons de Desconto',
-        countdownPromos: '### Contagens Regressivas',
-        popupCopies: '### Pop-ups Promocionais',
-        // Ferramentas Avançadas e Interativas
-        landingPageCopies: '### Landpages Simples',
-        competitorComparisons: '### Comparativos com Concorrentes',
-        interactiveQuizzes: '### Quizzes Interativos',
-        chatbotScripts: '### Chatbots de Atendimento',
-    };
-
-    const sectionKeys = Object.keys(sections) as (keyof typeof sections)[];
-    const parsedData: { [key: string]: string } = {};
-
-    for (let i = 0; i < sectionKeys.length; i++) {
-        const currentKey = sectionKeys[i];
-        const startTag = sections[currentKey];
-        const endTag = i + 1 < sectionKeys.length ? sections[sectionKeys[i + 1]] : undefined;
+        titles: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 15 títulos de produtos chamativos e otimizados para SEO." },
+        descriptions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 4 descrições de produtos detalhadas, persuasivas e com foco nos benefícios." },
+        productPricing: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 1 sugestão de preço, incluindo uma justificativa curta. Ex: 'R$ 99,90 - Preço competitivo para o mercado'." },
+        tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 25 tags/palavras-chave relevantes para SEO e marketplaces." },
+        hashtags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 25 hashtags populares para redes sociais (Instagram, TikTok)." },
         
-        let content = responseText.split(startTag)[1] || '';
-        if (endTag) {
-            content = content.split(endTag)[0] || '';
-        }
-        parsedData[currentKey] = content.trim();
-    }
-    
-    const listParser = (text: string) => text.split('\n').map(l => l.trim().replace(/^\d+\.\s*/, '')).filter(Boolean);
-    const commaParser = (text: string) => text.split(',').map(t => t.trim().replace(/\.$/, '')).filter(Boolean);
-    const hashtagParser = (text: string) => commaParser(text).map(t => t.startsWith('#') ? t : `#${t}`);
+        // Redes Sociais e Engajamento
+        socialMediaPosts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 25 frases para posts criativos em redes sociais (Instagram, Facebook, Twitter)." },
+        shortVideoScripts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 3 roteiros curtos (gancho, desenvolvimento, CTA) para vídeos (Reels, TikTok)." },
+        fictionalTestimonials: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 3 depoimentos fictícios de clientes satisfeitos, destacando um benefício cada." },
+        socialMediaBios: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 sugestões de bio para perfis de redes sociais (Instagram/TikTok) focadas no produto." },
+        
+        // SEO Avançado e Marketing de Conteúdo
+        longTailKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 12 palavras-chave de cauda longa para blogs e SEO, focadas em intenção de compra." },
+        metaTagsAndAltTexts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 sugestões de meta descriptions e alt texts para imagens, otimizados para SEO." },
+        blogArticles: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 4 ideias de títulos e um breve resumo para posts de blog otimizados para SEO." },
+        buyingGuides: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 ideias para guias de compra, comparando o produto com alternativas ou explicando como escolher." },
+        faqs: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 perguntas frequentes (FAQ) com respostas claras e concisas sobre o produto." },
 
-    return {
-        titles: listParser(parsedData.titles),
-        descriptions: listParser(parsedData.descriptions),
-        productPricing: listParser(parsedData.productPricing),
-        tags: commaParser(parsedData.tags),
-        hashtags: hashtagParser(parsedData.hashtags),
-        socialMediaPosts: listParser(parsedData.socialMediaPosts),
-        shortVideoScripts: parsedData.shortVideoScripts.split(/###\s*Script\s*\d+/).map(s => s.trim()).filter(Boolean),
-        fictionalTestimonials: listParser(parsedData.fictionalTestimonials),
-        longTailKeywords: listParser(parsedData.longTailKeywords),
-        metaTagsAndAltTexts: listParser(parsedData.metaTagsAndAltTexts),
-        blogArticles: listParser(parsedData.blogArticles),
-        buyingGuides: listParser(parsedData.buyingGuides),
-        faqs: parsedData.faqs.split(/\n?P:\s*/).map(l => l.trim()).filter(Boolean).map(l => `P: ${l}`),
-        promotionalPhrases: listParser(parsedData.promotionalPhrases),
-        marketingEmails: parsedData.marketingEmails.split(/###\s*E-mail\s*\d+/).map(e => e.trim()).filter(Boolean),
-        priceVariations: listParser(parsedData.priceVariations),
-        discountCoupons: listParser(parsedData.discountCoupons),
-        countdownPromos: listParser(parsedData.countdownPromos),
-        popupCopies: listParser(parsedData.popupCopies),
-        landingPageCopies: parsedData.landingPageCopies.split(/###\s*Landpage\s*\d+/).map(l => l.trim()).filter(Boolean),
-        competitorComparisons: listParser(parsedData.competitorComparisons),
-        interactiveQuizzes: listParser(parsedData.interactiveQuizzes),
-        chatbotScripts: parsedData.chatbotScripts.split(/###\s*Chatbot\s*\d+/).map(s => s.trim()).filter(Boolean),
-    };
+        // Campanhas de Vendas e Promoções
+        promotionalPhrases: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 25 frases promocionais de impacto, focadas em gatilhos mentais (escassez, urgência)." },
+        marketingEmails: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 4 textos para e-mail marketing (lançamento, promoção, nutrição, recuperação de carrinho)." },
+        priceVariations: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 3 variações de preço para testes A/B ou promoções." },
+        discountCoupons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 3 ideias de cupons de desconto (ex: 'PRIMEIRACOMPRA10')." },
+        countdownPromos: { type: Type.ARRAY, items: { type: 'STRING' }, description: "Array com 2 textos para promoções com contagem regressiva." },
+        popupCopies: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 textos curtos para pop-ups de site." },
+        adCopies: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 textos curtos e diretos (copy) para anúncios pagos (Facebook Ads, Google Ads)." },
+        ctas: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 chamadas para ação (CTAs) claras e eficazes para botões e links." },
+        welcomeEmails: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 textos completos para e-mails de boas-vindas para novos clientes ou leads." },
+        slogans: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 slogans publicitários curtos e memoráveis para a marca ou produto." },
+        viralHooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 7 frases de gancho (hooks) projetadas para se tornarem virais em vídeos curtos." },
+
+        // Ferramentas Avançadas e Interativas
+        landingPageCopies: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 blocos de texto (headlines e CTAs) para uma landing page." },
+        competitorComparisons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 pontos de comparação com um concorrente fictício." },
+        interactiveQuizzes: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 ideias para quizzes interativos relacionados ao produto." },
+        chatbotScripts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array com 2 scripts simples para um chatbot de vendas." },
+    },
 };
 
-const generate = async (parts: any[]): Promise<GeneratedContent> => {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts },
-    });
-
-    const responseText = response.text;
-    if (!responseText) {
-      throw new Error("A API não retornou conteúdo.");
+const parseJsonResponse = (jsonString: string): GeneratedContent => {
+    try {
+        const parsed = JSON.parse(jsonString);
+        // Ensure all fields are arrays of strings, fallback to empty array if missing
+        const content: GeneratedContent = {
+            titles: Array.isArray(parsed.titles) ? parsed.titles : [],
+            descriptions: Array.isArray(parsed.descriptions) ? parsed.descriptions : [],
+            productPricing: Array.isArray(parsed.productPricing) ? parsed.productPricing : [],
+            tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+            hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
+            socialMediaPosts: Array.isArray(parsed.socialMediaPosts) ? parsed.socialMediaPosts : [],
+            shortVideoScripts: Array.isArray(parsed.shortVideoScripts) ? parsed.shortVideoScripts : [],
+            fictionalTestimonials: Array.isArray(parsed.fictionalTestimonials) ? parsed.fictionalTestimonials : [],
+            socialMediaBios: Array.isArray(parsed.socialMediaBios) ? parsed.socialMediaBios : [],
+            longTailKeywords: Array.isArray(parsed.longTailKeywords) ? parsed.longTailKeywords : [],
+            metaTagsAndAltTexts: Array.isArray(parsed.metaTagsAndAltTexts) ? parsed.metaTagsAndAltTexts : [],
+            blogArticles: Array.isArray(parsed.blogArticles) ? parsed.blogArticles : [],
+            buyingGuides: Array.isArray(parsed.buyingGuides) ? parsed.buyingGuides : [],
+            faqs: Array.isArray(parsed.faqs) ? parsed.faqs : [],
+            promotionalPhrases: Array.isArray(parsed.promotionalPhrases) ? parsed.promotionalPhrases : [],
+            marketingEmails: Array.isArray(parsed.marketingEmails) ? parsed.marketingEmails : [],
+            priceVariations: Array.isArray(parsed.priceVariations) ? parsed.priceVariations : [],
+            discountCoupons: Array.isArray(parsed.discountCoupons) ? parsed.discountCoupons : [],
+            countdownPromos: Array.isArray(parsed.countdownPromos) ? parsed.countdownPromos : [],
+            popupCopies: Array.isArray(parsed.popupCopies) ? parsed.popupCopies : [],
+            adCopies: Array.isArray(parsed.adCopies) ? parsed.adCopies : [],
+            ctas: Array.isArray(parsed.ctas) ? parsed.ctas : [],
+            welcomeEmails: Array.isArray(parsed.welcomeEmails) ? parsed.welcomeEmails : [],
+            slogans: Array.isArray(parsed.slogans) ? parsed.slogans : [],
+            viralHooks: Array.isArray(parsed.viralHooks) ? parsed.viralHooks : [],
+            landingPageCopies: Array.isArray(parsed.landingPageCopies) ? parsed.landingPageCopies : [],
+            competitorComparisons: Array.isArray(parsed.competitorComparisons) ? parsed.competitorComparisons : [],
+            interactiveQuizzes: Array.isArray(parsed.interactiveQuizzes) ? parsed.interactiveQuizzes : [],
+            chatbotScripts: Array.isArray(parsed.chatbotScripts) ? parsed.chatbotScripts : [],
+            groundingChunks: [],
+        };
+        return content;
+    } catch (e) {
+        console.error("Failed to parse JSON response from Gemini:", e);
+        throw new Error("A resposta da IA não estava no formato JSON esperado. Tente novamente.");
     }
-    const parsedContent = parseResponse(responseText);
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    return { ...parsedContent, groundingChunks };
 }
 
-export const generateContentFromImage = async (base64Data: string, mimeType: string): Promise<GeneratedContent> => {
-  try {
-    const prompt = `Analise a imagem deste produto e estime um preço de mercado.${commonPrompt}`;
-    const imagePart = { inlineData: { data: base64Data, mimeType } };
-    const textPart = { text: prompt };
-    return await generate([imagePart, textPart]);
-  } catch (error) {
-    console.error("Error generating content from image:", error);
-    throw new Error("Falha ao gerar conteúdo a partir da imagem. Tente novamente.");
-  }
-};
 
-export const generateContentFromUrl = async (productUrl: string): Promise<GeneratedContent> => {
+export const generateContentFromImage = async (base64: string, mimeType: string): Promise<GeneratedContent> => {
+    const model = 'gemini-2.5-flash';
+    
+    const imagePart = { inlineData: { data: base64, mimeType } };
+    const textPart = {
+        text: `Analise a imagem deste produto e gere uma campanha de marketing completa em português do Brasil. O objetivo é vender este produto em marketplaces como Shopee e em redes sociais. Forneça o conteúdo estritamente no formato JSON especificado no schema.`,
+    };
+
     try {
-        const prompt = `Com base nas informações encontradas na web sobre o produto no link a seguir: ${productUrl}.${commonPrompt}`;
-        
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            },
-        });
-
-        const responseText = response.text;
-        if (!responseText) {
-            throw new Error("A API não retornou conteúdo.");
-        }
-        const parsedContent = parseResponse(responseText);
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        return { ...parsedContent, groundingChunks };
-    } catch (error) {
-        console.error("Error generating content from URL:", error);
-        throw new Error("Falha ao gerar conteúdo a partir do link. Verifique a URL e tente novamente.");
-    }
-};
-
-export const generateVisualContent = async (base64SourceImage: string, mimeType: string, prompt: string): Promise<string> => {
-    try {
-        const imagePart = {
-            inlineData: { data: base64SourceImage, mimeType },
-        };
-        const textPart = { text: prompt };
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: model,
             contents: { parts: [imagePart, textPart] },
             config: {
+                responseMimeType: 'application/json',
+                responseSchema: contentGenerationSchema,
+            }
+        });
+
+        const jsonString = response.text;
+        const parsedContent = parseJsonResponse(jsonString);
+        return parsedContent;
+    } catch (error) {
+        console.error("Error generating content from image:", error);
+        throw new Error("Falha ao gerar conteúdo a partir da imagem. Verifique o console para mais detalhes.");
+    }
+};
+
+export const generateContentFromUrl = async (url: string): Promise<GeneratedContent> => {
+    const model = 'gemini-2.5-flash';
+
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: `A partir da URL de produto '${url}', gere uma campanha de marketing completa em português do Brasil. O objetivo é vender este produto em marketplaces como Shopee e em redes sociais. Forneça o conteúdo estritamente no formato JSON, aderindo ao schema fornecido.`,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: 'application/json',
+                responseSchema: contentGenerationSchema,
+            }
+        });
+        
+        const jsonString = response.text;
+        const parsedContent = parseJsonResponse(jsonString);
+        
+        if (response.candidates && response.candidates[0].groundingMetadata?.groundingChunks) {
+            parsedContent.groundingChunks = response.candidates[0].groundingMetadata.groundingChunks;
+        }
+
+        return parsedContent;
+    } catch (error) {
+        console.error("Error generating content from URL:", error);
+        throw new Error("Falha ao gerar conteúdo a partir do link. A URL pode estar inacessível ou o conteúdo pode ser inválido.");
+    }
+};
+
+export const generateVisualContent = async (base64: string, mimeType: string, prompt: string): Promise<string> => {
+    const model = 'gemini-2.5-flash-image';
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: {
+                parts: [
+                    { inlineData: { data: base64, mimeType } },
+                    { text: prompt },
+                ],
+            },
+            config: {
                 responseModalities: [Modality.IMAGE],
             },
         });
         
-        const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
-        if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
-            return generatedPart.inlineData.data;
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return part.inlineData.data;
+            }
         }
+        throw new Error("Nenhuma imagem foi gerada pela IA.");
 
-        throw new Error("A API não retornou uma imagem válida.");
     } catch (error) {
         console.error("Error generating visual content:", error);
-        throw new Error("Falha ao gerar a imagem. A IA pode ter recusado a solicitação.");
+        throw new Error("Falha ao gerar a mídia visual. Tente novamente.");
     }
 };
 
-export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
-    try {
-        const textPart = { text: prompt };
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [textPart] },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
-        });
-        
-        const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
-        if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
-            return generatedPart.inlineData.data;
-        }
-
-        throw new Error("A API não retornou uma imagem de logo válida.");
-    } catch (error) {
-        console.error("Error generating logo:", error);
-        throw new Error("Falha ao gerar o logo. A IA pode ter recusado a solicitação.");
-    }
-};
-
-export const generateLogos = async (
-    prompt: string,
-    referenceImage: { base64: string; mimeType: string } | null
-): Promise<(string | null)[]> => {
-    
-    let promises: Promise<string>[];
-
-    if (referenceImage) {
-        const logoPromptText = `Using the provided image as inspiration for style and concept, create a minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
-        promises = Array(10).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, logoPromptText));
-    } else {
-        const logoPromptText = `minimalist vector logo design, flat icon, centered on a clean solid white background, professional brand identity, high resolution, for: ${prompt}`;
-        promises = Array(10).fill(null).map(() => generateImageFromPrompt(logoPromptText));
-    }
-
-    const results = await Promise.allSettled(promises);
-    
-    const logos = results.map(res => res.status === 'fulfilled' ? res.value : null);
-
-    if (logos.every(l => l === null)) {
-         throw new Error("A IA não conseguiu gerar nenhum logo. Tente um prompt mais descritivo.");
-    }
-    return logos;
-};
-
-export const generateBanners = async (
+const generateAssets = async (
     prompt: string, 
-    referenceImage: { base64: string; mimeType: string } | null
+    style: string, 
+    referenceImage: { base64: string; mimeType: string; } | null, 
+    count: number,
+    aspectRatio: "1:1" | "16:9"
 ): Promise<(string | null)[]> => {
     
-    let promises: Promise<string>[];
-
+    const fullPrompt = `Estilo ${style}. ${prompt}`;
+    
+    // If there is a reference image, use image editing model
     if (referenceImage) {
-        const bannerPrompt = `Using the product from the provided image, create a professional and visually appealing marketing banner. Aspect ratio must be exactly 16:9. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
-        promises = Array(10).fill(null).map(() => generateVisualContent(referenceImage.base64, referenceImage.mimeType, bannerPrompt));
-    } else {
-        const bannerPrompt = `Create a professional and visually appealing marketing banner. Aspect ratio must be exactly 16:9. The design should be clean, high-resolution, with negative space for text. The style should be engaging and on-brand for: ${prompt}`;
-        promises = Array(10).fill(null).map(() => generateImageFromPrompt(bannerPrompt));
+        const model = 'gemini-2.5-flash-image';
+        // We can only generate one image at a time with this model
+        const promises = Array(count).fill(null).map(async () => {
+            try {
+                const response = await ai.models.generateContent({
+                    model: model,
+                    contents: {
+                        parts: [
+                            { inlineData: { data: referenceImage.base64, mimeType: referenceImage.mimeType } },
+                            { text: fullPrompt },
+                        ],
+                    },
+                    config: {
+                        responseModalities: [Modality.IMAGE],
+                    },
+                });
+                for (const part of response.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        return part.inlineData.data;
+                    }
+                }
+                return null;
+            } catch (e) {
+                console.error("Error in single image generation with reference:", e);
+                return null;
+            }
+        });
+        return Promise.all(promises);
     }
+    
+    // If no reference, use Imagen
+    const model = 'imagen-4.0-generate-001';
+    try {
+        const response = await ai.models.generateImages({
+            model: model,
+            prompt: fullPrompt,
+            config: {
+                numberOfImages: count,
+                outputMimeType: 'image/png', // Using PNG for potential transparency in logos
+                aspectRatio: aspectRatio,
+            },
+        });
 
-    const results = await Promise.allSettled(promises);
-    
-    const banners = results.map(res => res.status === 'fulfilled' ? res.value : null);
-    
-    if (banners.every(b => b === null)) {
-         throw new Error("A IA não conseguiu gerar nenhum banner. Tente um prompt mais descritivo ou uma imagem de referência diferente.");
+        return response.generatedImages.map(img => img.image.imageBytes);
+
+    } catch (error) {
+        console.error("Error generating image assets:", error);
+        throw new Error("Falha ao gerar os assets visuais. Tente um prompt diferente.");
     }
-
-    return banners;
 };
 
-export const generateNotificationImages = async (data: NotificationData): Promise<(string | null)[]> => {
-    const { eventType, value, product, time, client, paymentMethod, paymentLogoSvg } = data;
-    
-    const paymentLogoBase64 = btoa(paymentLogoSvg);
-    const logoImagePart = { inlineData: { data: paymentLogoBase64, mimeType: 'image/svg+xml' } };
 
-    const styles = [
-      { name: "Dark Mode", prompt: "Create a photorealistic image of a smartphone notification. Style: modern dark mode, sleek, minimalist, on a black background." },
-      { name: "Light Mode", prompt: "Create a photorealistic image of a smartphone notification. Style: clean light mode, vibrant green accent color, on a white background." },
-      { name: "Glassmorphism", prompt: "Create a photorealistic image of a smartphone notification. Style: glassmorphism, with a blurred background and translucent effect." },
-      { name: "Neumorphic", prompt: "Create a photorealistic image of a smartphone notification. Style: neumorphic, with soft shadows and a subtle, clean UI." },
-      { name: "Playful", prompt: "Create a photorealistic image of a smartphone notification. Style: playful and friendly, with bold typography and rounded corners." },
-    ];
+export const generateLogos = async (prompt: string, style: string, referenceImage: { base64: string; mimeType: string; } | null): Promise<(string | null)[]> => {
+    const logoPrompt = `Um logo vetorial, minimalista, com design flat, centrado em um fundo branco sólido para: ${prompt}`;
+    return generateAssets(logoPrompt, style, referenceImage, 10, '1:1');
+};
 
-    const promises = styles.map(style => {
-        const textPrompt = `
-        ${style.prompt}
-        The notification must look like a real OS notification (e.g., iOS or Android).
-        It must have a square green app icon on the left with a white lime slice logo inside it.
-        The notification content must be clearly legible and contain this exact information:
-        - Event: '${eventType}!' (in bold)
-        - Value: 'Valor: R$ ${value}'
-        - Product: 'Produto: ${product}'
-        - Client: 'Cliente: ${client}'
-        - Payment: '${paymentMethod}'
-        - The timestamp on the right should say '${time}'.
-        The provided payment method logo must be displayed next to the payment text or client name.
-        Use a clean, modern, sans-serif font.
-        `;
+export const generateBanners = async (prompt: string, style: string, referenceImage: { base64: string; mimeType: string; } | null): Promise<(string | null)[]> => {
+    const bannerPrompt = `Um banner promocional para web, com iluminação cinematográfica, alta resolução, 4k. O banner é sobre: ${prompt}`;
+    return generateAssets(bannerPrompt, style, referenceImage, 10, '16:9');
+};
 
-        const textPart = { text: textPrompt };
-        
-        return ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [textPart, logoImagePart] },
+
+export const generateImageAssets = async (prompt: string, count: number, aspectRatio: "1:1" | "9:16" = "1:1"): Promise<(string | null)[]> => {
+    const model = 'imagen-4.0-generate-001';
+    try {
+        const response = await ai.models.generateImages({
+            model: model,
+            prompt: prompt,
             config: {
-                responseModalities: [Modality.IMAGE],
+                numberOfImages: count,
+                outputMimeType: 'image/png',
+                aspectRatio: aspectRatio,
             },
-        }).then(response => {
-            const generatedPart = response.candidates?.[0]?.content?.parts?.[0];
-            if (generatedPart && 'inlineData' in generatedPart && generatedPart.inlineData) {
-                return generatedPart.inlineData.data;
-            }
-            return null;
-        }).catch(error => {
-            console.error(`Error generating notification style ${style.name}:`, error);
-            return null;
         });
+
+        return response.generatedImages.map(img => img.image.imageBytes);
+    } catch (error) {
+        console.error("Error generating image assets:", error);
+        throw new Error("Falha ao gerar os assets visuais. Tente um prompt diferente.");
+    }
+};
+
+// --- NOTIFICATION GENERATOR SERVICES ---
+
+type FrameType = 'framed' | 'frameless' | 'square';
+type SingleNotificationPayload = {
+    notifications: NotificationData[];
+    statusBar: StatusBarData;
+    appIcon: { base64: string; mimeType: string; } | null;
+    background: { base64: string; mimeType: string; };
+    deviceFrame: string;
+    frameType: FrameType;
+};
+
+const getDeviceFramePrompt = (frameType: FrameType, deviceFrame: string): string => {
+    switch (frameType) {
+        case 'framed':
+            return `A tela deve ser renderizada dentro de um mockup fotorrealista de um '${deviceFrame}'.`;
+        case 'frameless':
+            return 'A imagem deve ser apenas a tela, com cantos levemente arredondados, como um print de tela.';
+        case 'square':
+            return 'A imagem deve ser apenas a tela, com cantos retos (90 graus), sem nenhuma moldura.';
+        default:
+            return '';
+    }
+};
+
+const buildBasePrompt = (notifications: NotificationData[], statusBar: StatusBarData) => {
+    const notificationsHtml = notifications.map(n => `
+        <div class="notification" style="background-color: rgba(40, 40, 40, 0.8); backdrop-filter: blur(10px); border-radius: 20px; padding: 15px; margin-bottom: 10px; border: 1px solid rgba(80, 80, 80, 0.5);">
+            <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center;">
+                    <span style="font-size: 15px; font-weight: 600; color: white; margin-left: 8px;">Minha Loja</span>
+                </div>
+                <span style="font-size: 15px; color: #BBB;">${n.time}</span>
+            </div>
+            <div class="content" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <span style="font-size: 17px; font-weight: bold; color: white;">${n.eventType}</span>
+                <span style="font-size: 17px; font-weight: bold; color: ${n.accentColor};">${n.value}</span>
+            </div>
+            <div class="details" style="font-size: 15px; color: #DDD;">
+                Produto: ${n.product} | Cliente: ${n.client}
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        Gere uma imagem fotorrealista de uma tela de celular (proporção 9:19.5).
+        A barra de status no topo deve mostrar "${statusBar.time}" à esquerda, e ícones de ${statusBar.signal} e bateria com ${statusBar.battery} à direita.
+        Abaixo da barra de status, renderize as seguintes notificações, usando este HTML como guia para o conteúdo e estilo. O app icon deve ser exibido à esquerda do nome da loja no cabeçalho de cada notificação.
+        ${notificationsHtml}
+    `;
+};
+
+export const generateSingleNotificationImage = async (payload: SingleNotificationPayload): Promise<string> => {
+    const model = 'gemini-2.5-flash-image';
+    
+    const parts: any[] = [];
+    parts.push({
+        text: `
+            ${buildBasePrompt(payload.notifications, payload.statusBar)}
+            ${getDeviceFramePrompt(payload.frameType, payload.deviceFrame)}
+        `
     });
 
-    const results = await Promise.all(promises);
-
-    if (results.every(r => r === null)) {
-        throw new Error("A IA não conseguiu gerar nenhuma imagem de notificação. Tente novamente.");
+    parts.push({ inlineData: { data: payload.background.base64, mimeType: payload.background.mimeType } });
+    if(payload.appIcon) {
+        parts.push({ text: "Use esta imagem como o ícone do aplicativo:" });
+        parts.push({ inlineData: { data: payload.appIcon.base64, mimeType: payload.appIcon.mimeType } });
     }
 
-    return results;
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: { parts: parts },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+        
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return part.inlineData.data;
+            }
+        }
+        throw new Error("Nenhuma imagem foi gerada pela IA.");
+
+    } catch (error) {
+        console.error("Error generating single notification image:", error);
+        throw new Error("Falha ao gerar a imagem da notificação. Tente novamente.");
+    }
 };

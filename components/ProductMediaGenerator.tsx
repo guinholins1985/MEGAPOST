@@ -80,6 +80,22 @@ const visualMediaCategories: VisualMediaCategory[] = [
         ]
     },
     {
+        categoryTitle: "Campanhas Temáticas e Sazonais",
+        items: [
+            { id: 'banner_seasonal_bf', title: "Banner de Black Friday (16:9)", description: "Banner de alto contraste e senso de urgência, perfeito para a Black Friday.", prompt: "Create a high-impact promotional banner for Black Friday (16:9 aspect ratio). The banner must feature the product exactly as it appears in the original image, preserving its composition and angle. Design a dark, high-contrast background around it, possibly with neon accents or bold typography elements (without rendering text). The mood should convey urgency and exclusivity." },
+            { id: 'post_seasonal_christmas', title: "Post de Natal (1:1)", description: "Crie uma imagem temática de Natal para posts no Instagram, com elementos festivos.", prompt: "Using the exact product from the original image, place it into a new festive Christmas-themed scene for an Instagram post (1:1 aspect ratio). The product's angle, lighting, and composition must remain identical to the original. Decorate the scene with subtle Christmas elements like pine branches, ornaments, or warm string lights. The overall mood should be cozy and festive." },
+            { id: 'banner_seasonal_valentines', title: "Banner Dia dos Namorados (16:9)", description: "Gere um banner romântico para promoções de Dia dos Namorados.", prompt: "Create a romantic banner for a Valentine's Day promotion (16:9 aspect ratio). The banner must feature the product exactly as it appears in the original image, preserving its composition and angle. Design a background with romantic elements like soft pinks, reds, hearts, or flowers. The scene should feel elegant and emotional." },
+        ]
+    },
+    {
+        categoryTitle: "Estilos Criativos e Abstratos",
+        items: [
+            { id: 'style_minimalist', title: "Foco Minimalista (4:5)", description: "Produto em um cenário clean, com cores neutras e foco absoluto no item.", prompt: "Keeping the product's exact appearance and composition from the original image, place it in a minimalist scene. Use a neutral color palette (grays, beiges, whites) and geometric shapes. The lighting should be soft and even, creating a clean, sophisticated, and modern look. Aspect ratio 4:5." },
+            { id: 'style_luxury', title: "Apresentação de Luxo (1:1)", description: "Posicione o produto em um ambiente luxuoso, com texturas ricas como seda ou veludo.", prompt: "Recreate the original image, keeping the product's composition, angle, and appearance exactly the same. Place this unchanged product into a luxurious setting. Use rich textures like silk, velvet, or dark marble in the background. The lighting should be dramatic and elegant, highlighting the product's quality. The mood should be premium and exclusive. Aspect ratio 1:1." },
+            { id: 'style_surreal', title: "Cenário Surreal (16:9)", description: "Coloque o produto em um cenário de fantasia, flutuando entre nuvens ou em paisagens oníricas.", prompt: "Using the exact product from the original image, place it into a surreal and dreamlike fantasy landscape. The product's angle, lighting, and composition must remain identical. The scene could involve floating islands, magical forests, or clouds with unusual colors. The mood should be imaginative and captivating. Aspect ratio 16:9." }
+        ]
+    },
+    {
         categoryTitle: "Efeitos e Mídias Dinâmicas",
         items: [
             { id: 'effect_3d_shadow', title: "Efeito Sombra Realista", description: "Adiciona uma sombra 3D sutil para dar profundidade e realismo ao produto.", prompt: "Take the original image and, without altering the product or its composition in any way, add a realistic, soft 3D shadow underneath it to create a sense of depth and make it pop from the background." },
@@ -104,6 +120,9 @@ const ProductMediaGenerator: React.FC<ProductMediaGeneratorProps> = ({ sourceIma
       banner_seasonal_bf: { ...initialImageState }, banner_facebook_cover: { ...initialImageState }, template_instagram_post: { ...initialImageState },
       template_instagram_story: { ...initialImageState }, vertical_tiktok_reels: { ...initialImageState }, vertical_whatsapp_status: { ...initialImageState },
       effect_3d_shadow: { ...initialImageState }, effect_floating: { ...initialImageState }, infographic_benefits: { ...initialImageState }, youtube_thumbnail: { ...initialImageState },
+      // New types
+      post_seasonal_christmas: { ...initialImageState }, banner_seasonal_valentines: { ...initialImageState }, style_minimalist: { ...initialImageState },
+      style_luxury: { ...initialImageState }, style_surreal: { ...initialImageState },
     });
 
     const handleGenerateProductImage = async (type: ImageType, prompt: string) => {

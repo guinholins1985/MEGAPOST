@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEGAPOST - Gerador de Conteúdo AI</title>
+    <title>MEGAPOST | AI-Powered Marketing Content Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
       :root {
-        --background-light: #fdfdff;
-        --background-dark: #0a0a0a;
+        --background-light: #f8f9fc;
+        --background-dark: #0d1117;
         --card-light: #ffffff;
-        --card-dark: #111111;
-        --text-light: #0a0a0a;
-        --text-dark: #f0f0f0;
+        --card-dark: #161b22;
+        --text-light: #161b22;
+        --text-dark: #e6edf3;
         --primary-accent: #6366f1;
-        --secondary-accent: #8b5cf6;
-        --border-light: #eaeaeb;
-        --border-dark: #27272a;
+        --secondary-accent: #a855f7;
+        --border-light: #e0e0e0;
+        --border-dark: #30363d;
+      }
+      html {
+        scroll-padding-top: 80px;
       }
       body {
         font-family: 'Inter', sans-serif;
@@ -36,7 +39,7 @@
         background-image: linear-gradient(to right, var(--primary-accent), var(--secondary-accent));
       }
       .glow-on-hover:hover {
-        box-shadow: 0 0 15px 0px color-mix(in srgb, var(--primary-accent) 40%, transparent);
+        box-shadow: 0 0 20px 0px color-mix(in srgb, var(--primary-accent) 40%, transparent);
       }
       ::-webkit-scrollbar {
         width: 8px;
@@ -55,6 +58,14 @@
 
       ::selection {
         background-color: color-mix(in srgb, var(--primary-accent) 30%, transparent);
+      }
+      
+      @keyframes scroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+      }
+      .animate-scroll {
+          animation: scroll 60s linear infinite;
       }
     </style>
 <script type="importmap">
